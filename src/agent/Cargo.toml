@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 [workspace]
-resolver = "2"
+resolver = "2"a
 
 members = [
     "nodeagent"
