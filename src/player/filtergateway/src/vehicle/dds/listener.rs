@@ -113,7 +113,7 @@ pub fn create_idl_listener(
 #[async_trait]
 impl DdsTopicListener for TopicListener {
     fn is_running(&self) -> bool {
-        return self.is_running;
+        self.is_running
     }
 
     async fn start(&mut self) -> Result<()> {
@@ -430,9 +430,9 @@ mod tests {
             TopicListener::new(topic_name.clone(), data_type_name.clone(), tx, domain_id);
 
         assert_eq!(listener.get_topic_name(), topic_name); // Validate topic name
-        assert_eq!(listener.is_running(), false); // Validate initial running state
-        assert_eq!(listener.is_topic(&topic_name), true); // Validate topic matching
-        assert_eq!(listener.is_topic("other_topic"), false); // Validate non-matching topic
+        assert!(!listener.is_running()); // Validate initial running state
+        assert!(listener.is_topic(&topic_name)); // Validate topic matching
+        assert!(!listener.is_topic("other_topic")); // Validate non-matching topic
     }
 
     #[tokio::test] // Test starting and stopping a TopicListener
@@ -445,13 +445,13 @@ mod tests {
         let mut listener =
             TopicListener::new(topic_name.clone(), data_type_name.clone(), tx, domain_id);
 
-        assert_eq!(listener.is_running(), false); // Validate initial running state
+        assert!(!listener.is_running()); // Validate initial running state
 
         listener.start().await.unwrap(); // Start the listener
-        assert_eq!(listener.is_running(), true); // Validate running state after start
+        assert!(listener.is_running()); // Validate running state after start
 
         listener.stop().await.unwrap(); // Stop the listener
-        assert_eq!(listener.is_running(), false); // Validate running state after stop
+         assert!(!listener.is_running()); // Validate running state after stop
     }
 
     #[tokio::test] // Test topic matching functionality
@@ -483,9 +483,9 @@ mod tests {
 
         tokio::time::sleep(tokio::time::Duration::from_millis(200)).await; // Wait for a short duration
 
-        assert_eq!(listener.is_running(), true); // Validate listener is still running
+        assert!(listener.is_running()); // Validate listener is still running
 
         listener.stop().await.unwrap(); // Stop the listener
-        assert_eq!(listener.is_running, false); // Validate listener is no longer running
+        assert!(!listener.is_running); // Validate listener is no longer running
     }
 }
