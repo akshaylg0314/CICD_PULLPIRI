@@ -27,23 +27,28 @@ TOOLS_MANIFEST="src/tools/Cargo.toml"
 run_clippy() {
   local manifest="$1"
   local label="$2"
+  local clippy_passed=false
 
   echo "Running Clippy for $label ($manifest)" | tee -a "$LOG_FILE"
 
-  if cargo clippy -vv --manifest-path="$manifest" --all-targets --all-features | tee "$TMP_FILE"; then
-    echo "clippy passed for $label"
+  if cargo clippy -vv --manifest-path="$manifest" --all-targets --all-features -D warnings | tee "$TMP_FILE"; then
+    echo "Clippy for $label passed clean." | tee -a "$LOG_FILE"
+    clippy_passed=true
   else
-    echo "::error ::clippy failed for $label! Check logs." | tee -a "$LOG_FILE"
+    echo "::error ::Clippy for $label failed! Found warnings/errors. Check logs." | tee -a "$LOG_FILE"
+    # Capture relevant lines from TMP_FILE if needed for summary, or direct stdout/stderr
+    # Example: Print only the warnings/errors to log, not the whole verbose output
+    # grep -E "warning:|error:" "$TMP_FILE" | tee -a "$LOG_FILE"
   fi
 
-  local passed
-  local failed
-
-  passed=$(grep -oP '\d+ passed' "$TMP_FILE" | awk '{sum += $1} END {print sum}')
-  failed=$(grep -oP '\d+ failed' "$TMP_FILE" | awk '{sum += $1} END {print sum}')
-
-  PASSED_TOTAL=$((PASSED_TOTAL + passed))
-  FAILED_TOTAL=$((FAILED_TOTAL + failed))
+  # Instead of PASSED_TOTAL/FAILED_TOTAL for *lints*, we track job success/failure
+  if $clippy_passed; then
+    echo "✅ Clippy for $label: PASSED" >> "$REPORT_FILE"
+  else
+    echo "❌ Clippy for $label: FAILED" >> "$REPORT_FILE"
+    # Increment a counter for overall script failure
+    (( FAILED_TOTAL++ )) # FAILED_TOTAL now represents number of manifests that failed clippy
+  fi
 }
 
 # Run common clippy checks
