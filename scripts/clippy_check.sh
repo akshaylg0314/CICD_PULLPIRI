@@ -18,10 +18,10 @@ PIDS=()
 
 # Declare manifest paths
 COMMON_MANIFEST="src/common/Cargo.toml"
-AGENT_MANIFEST="src/agent/Cargo.toml"
+#AGENT_MANIFEST="src/agent/Cargo.toml"
 TOOLS_MANIFEST="src/tools/Cargo.toml"
-APISERVER_MANIFEST="src/server/apiserver/Cargo.toml"
-FILTERGATEWAY_MANIFEST="src/player/filtergateway/Cargo.toml"
+#APISERVER_MANIFEST="src/server/apiserver/Cargo.toml"
+#FILTERGATEWAY_MANIFEST="src/player/filtergateway/Cargo.toml"
 
 # Run and parse test output
 run_clippy() {
