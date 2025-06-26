@@ -29,10 +29,10 @@ jobs:
             fi
             echo "Successfully validated $file"
           done
-      - name: Run main CI (for logic changes)
+      #- name: Run main CI (for logic changes)
         # It's good practice to run your regular CI even if only workflow files change,
         # to ensure the changes to the CI itself don't break the build.
-        uses: ./.github/workflows/pull_req.yml # Reusable workflow or call steps directly
+      #  uses: ./.github/workflows/pull_req.yml # Reusable workflow or call steps directly
         # You would typically have this as a separate job or call a reusable workflow
         # if your main CI is very large.
         # For this example, we'll assume a direct call if that was a reusable workflow.
