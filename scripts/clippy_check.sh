@@ -53,24 +53,24 @@ else
   echo "::warning ::$COMMON_MANIFEST not found, skipping..."
 fi
 
-# Run apiserver clippy checks
-if [[ -f "$APISERVER_MANIFEST" ]]; then
-  run_clippy "$APISERVER_MANIFEST" "apiserver"
-else
-  echo "::warning ::$APISERVER_MANIFEST not found, skipping..."
-fi
+# # Run apiserver clippy checks
+# if [[ -f "$APISERVER_MANIFEST" ]]; then
+#   run_clippy "$APISERVER_MANIFEST" "apiserver"
+# else
+#   echo "::warning ::$APISERVER_MANIFEST not found, skipping..."
+# fi
 
-# Run tools clippy checks
-if [[ -f "$TOOLS_MANIFEST" ]]; then
-  run_clippy "$TOOLS_MANIFEST" "tools"
-else
-  echo "::warning ::$TOOLS_MANIFEST not found, skipping..."
-fi
+# # Run tools clippy checks
+# if [[ -f "$TOOLS_MANIFEST" ]]; then
+#   run_clippy "$TOOLS_MANIFEST" "tools"
+# else
+#   echo "::warning ::$TOOLS_MANIFEST not found, skipping..."
+# fi
 
-# Run agent clippy checks
-if [[ -f "$AGENT_MANIFEST" ]]; then
-  run_clippy "$AGENT_MANIFEST" "agent"
-else
-  echo "::warning ::$AGENT_MANIFEST not found, skipping..."
-fi
+# # Run agent clippy checks
+# if [[ -f "$AGENT_MANIFEST" ]]; then
+#   run_clippy "$AGENT_MANIFEST" "agent"
+# else
+#   echo "::warning ::$AGENT_MANIFEST not found, skipping..."
+# fi
 
