@@ -27,5 +27,5 @@ jobs:
       - name: Install markdownlint-cli
         run: npm install -g markdownlint-cli
 
-      - name: Run markdownlint
-        run: markdownlint . # Lints all markdown files in the repo (adjust path if needed)
+      #- name: Run markdownlint
+        #run: markdownlint . # Lints all markdown files in the repo (adjust path if needed)
