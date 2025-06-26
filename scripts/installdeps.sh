@@ -17,7 +17,6 @@ common_packages=(
   libssl-dev
   nodejs
   npm
-  cargo-clippy
 )
 DEBIAN_FRONTEND=noninteractive apt-get install -y "${common_packages[@]}"
 echo "✅ Base packages installed successfully."
