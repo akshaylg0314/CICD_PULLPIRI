@@ -31,7 +31,7 @@ jobs:
         run: ./scripts/testNparse.sh
 
       - name: Run cargo clippy
-        run: cargo clippy --all-targets --all-features
+        run: ./scripts/clippy_check.sh
 
-      - name: Run cargo fmt check
-        run: cargo fmt --all --check
+      - name: Run cargo fmt
+        run: ./scripts/fmt_check.sh # Add --check to ensure formatting is correct
