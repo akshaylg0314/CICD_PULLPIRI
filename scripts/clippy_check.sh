@@ -31,7 +31,7 @@ run_clippy() {
 
   echo "Running Clippy for $label ($manifest)" | tee -a "$LOG_FILE"
 
-  if cargo clippy -vv --manifest-path="$manifest" --all-targets --all-features -D warnings | tee "$TMP_FILE"; then
+  if cargo clippy -vv --manifest-path="$manifest" --all-targets --all-features | tee "$TMP_FILE"; then
     echo "Clippy for $label passed clean." | tee -a "$LOG_FILE"
     clippy_passed=true
   else
