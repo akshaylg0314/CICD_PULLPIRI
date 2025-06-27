@@ -7,7 +7,7 @@ REPORT_FILE="test_summary.md"
 
 rm -f "$LOG_FILE" "$TMP_FILE" "$REPORT_FILE"
 
-echo "Running Cargo Tests..." | tee -a "$LOG_FILE"
+echo "Running Cargo fmt..." | tee -a "$LOG_FILE"
 
 PROJECT_ROOT=${GITHUB_WORKSPACE:-$(pwd)}
 cd "$PROJECT_ROOT"
@@ -18,10 +18,10 @@ PIDS=()
 
 # Declare manifest paths
 COMMON_MANIFEST="src/common/Cargo.toml"
-#AGENT_MANIFEST="src/agent/Cargo.toml"
+AGENT_MANIFEST="src/agent/Cargo.toml"
 TOOLS_MANIFEST="src/tools/Cargo.toml"
-#APISERVER_MANIFEST="src/server/apiserver/Cargo.toml"
-#FILTERGATEWAY_MANIFEST="src/player/filtergateway/Cargo.toml"
+APISERVER_MANIFEST="src/server/apiserver/Cargo.toml"
+FILTERGATEWAY_MANIFEST="src/player/filtergateway/Cargo.toml"
 
 # Run and parse test output
 run_clippy() {

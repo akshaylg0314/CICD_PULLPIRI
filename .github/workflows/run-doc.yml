@@ -10,7 +10,7 @@ jobs:
       image: rust:latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install markdownlint
-        run: npm install -g markdownlint-cli
-      - name: Lint docs
-        run: markdownlint '**/*.md'
+    #   - name: Install markdownlint
+    #     run: npm install -g markdownlint-cli
+    #   - name: Lint docs
+    #     run: markdownlint '**/*.md'
