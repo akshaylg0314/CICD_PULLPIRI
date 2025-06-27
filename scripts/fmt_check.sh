@@ -78,4 +78,3 @@ if [[ -f "$AGENT_MANIFEST" ]]; then
 else
   echo "::warning ::$AGENT_MANIFEST not found, skipping..."
 fi
-!/bin/bash
