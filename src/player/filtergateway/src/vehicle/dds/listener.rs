@@ -451,7 +451,7 @@ mod tests {
         assert!(listener.is_running()); // Validate running state after start
 
         listener.stop().await.unwrap(); // Stop the listener
-         assert!(!listener.is_running()); // Validate running state after stop
+        assert!(!listener.is_running()); // Validate running state after stop
     }
 
     #[tokio::test] // Test topic matching functionality
