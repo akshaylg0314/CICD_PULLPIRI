@@ -1,37 +1,53 @@
-name: Pull Request CI
+# name: Pull Request CI
+
+# on:
+#   workflow_call:
+#   pull_request:
+#     # This workflow runs when a pull request is opened or updated targeting the main/master branch
+#     types: [opened, synchronize, reopened]
+#     branches:
+#       - main # Or master, develop, etc., depending on your main branch
+
+# env:
+#   CARGO_TERM_COLOR: always
+
+# jobs:
+#   build:
+
+#     runs-on: ubuntu-latest
+
+#     container:
+#       image: rust:latest
+#     steps:
+#       - uses: actions/checkout@v4
+
+#       - name: Install build env
+#         run: ./scripts/installdeps.sh
+
+#       - name: Build
+#         run: ./scripts/buildNparse.sh
+
+#       - name: Test
+#         run: ./scripts/testNparse.sh
+
+#       - name: Run cargo clippy
+#         run: ./scripts/clippy_check.sh
+
+#       - name: Run cargo fmt
+#         run: ./scripts/fmt_check.sh # Add --check to ensure formatting is correct
+name: CI
 
 on:
-  workflow_call:
   pull_request:
-    # This workflow runs when a pull request is opened or updated targeting the main/master branch
-    types: [opened, synchronize, reopened]
-    branches:
-      - main # Or master, develop, etc., depending on your main branch
-
-env:
-  CARGO_TERM_COLOR: always
+    branches: [main]
+    paths:
+      - '**/*.rs'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'scripts/**'
+  push:
+    branches: [main]
 
 jobs:
-  build:
-
-    runs-on: ubuntu-latest
-
-    container:
-      image: rust:latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install build env
-        run: ./scripts/installdeps.sh
-
-      - name: Build
-        run: ./scripts/buildNparse.sh
-
-      - name: Test
-        run: ./scripts/testNparse.sh
-
-      - name: Run cargo clippy
-        run: ./scripts/clippy_check.sh
-
-      - name: Run cargo fmt
-        run: ./scripts/fmt_check.sh # Add --check to ensure formatting is correct
+  run-core-ci:
+    uses: ./.github/workflows/run-ci.yml

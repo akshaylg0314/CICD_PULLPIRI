@@ -1,0 +1,16 @@
+name: Doc CI
+
+on:
+  workflow_call:
+
+jobs:
+  doc_lint:
+    runs-on: ubuntu-latest
+    container:
+      image: rust:latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install markdownlint
+        run: npm install -g markdownlint-cli
+      - name: Lint docs
+        run: markdownlint '**/*.md'

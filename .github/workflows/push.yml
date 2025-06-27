@@ -1,32 +1,32 @@
-name: CI For Push
+# name: CI For Push
 
-on:
-  push:
-    # This workflow runs on pushes to any branch in the forked repository.
-    # It's intended for the developer to get immediate feedback.
-    branches:
-      - '**' # All branches
+# on:
+#   push:
+#     # This workflow runs on pushes to any branch in the forked repository.
+#     # It's intended for the developer to get immediate feedback.
+#     branches:
+#       - '**' # All branches
 
-jobs:
-  build:
+# jobs:
+#   build:
 
-    runs-on: ubuntu-latest
+#     runs-on: ubuntu-latest
 
-    container:
-      image: rust:latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install build env
-        run: ./scripts/installdeps.sh
+#     container:
+#       image: rust:latest
+#     steps:
+#       - uses: actions/checkout@v4
+#       - name: Install build env
+#         run: ./scripts/installdeps.sh
 
-      - name: Build
-        run: ./scripts/buildNparse.sh
+#       - name: Build
+#         run: ./scripts/buildNparse.sh
 
-      - name: Test
-        run: ./scripts/testNparse.sh
+#       - name: Test
+#         run: ./scripts/testNparse.sh
 
-      - name: Run cargo clippy
-        run: ./scripts/clippy_check.sh
+#       - name: Run cargo clippy
+#         run: ./scripts/clippy_check.sh
 
-      - name: Run cargo fmt
-        run: ./scripts/fmt_check.sh # Add --check to ensure formatting is correct
+#       - name: Run cargo fmt
+#         run: ./scripts/fmt_check.sh # Add --check to ensure formatting is correct
