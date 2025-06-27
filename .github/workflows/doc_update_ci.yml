@@ -39,6 +39,4 @@ on:
 
 jobs:
   run-doc-lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+    uses: ./.github/workflows/run-doc.yml
