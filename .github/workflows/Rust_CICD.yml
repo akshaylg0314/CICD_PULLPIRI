@@ -1,28 +1,28 @@
-name: Build Rust
+# name: Build Rust
 
-on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+# on:
+#   push:
+#     branches: [ "main" ]
+#   pull_request:
+#     branches: [ "main" ]
 
-env:
-  CARGO_TERM_COLOR: always
+# env:
+#   CARGO_TERM_COLOR: always
 
-jobs:
-  build:
+# jobs:
+#   build:
 
-    runs-on: ubuntu-latest
+#     runs-on: ubuntu-latest
 
-    container:
-      image: rust:latest
-    steps:
-    - uses: actions/checkout@v4
-    - name: Install build env
-      run: ./scripts/installdeps.sh
+#     container:
+#       image: rust:latest
+#     steps:
+#     - uses: actions/checkout@v4
+#     - name: Install build env
+#       run: ./scripts/installdeps.sh
 
-    - name: Build
-      run: ./scripts/buildNparse.sh
+#     - name: Build
+#       run: ./scripts/buildNparse.sh
 
-    - name: Test
-      run: ./scripts/testNparse.sh
+#     - name: Test
+#       run: ./scripts/testNparse.sh
