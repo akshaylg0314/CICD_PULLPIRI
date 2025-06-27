@@ -30,7 +30,7 @@ run_fmt() {
 
   echo "Running Clippy for $label ($manifest)" | tee -a "$LOG_FILE"
 
-  if cargo fmt -vv --manifest-path="$manifest" --all --check | tee "$TMP_FILE"; then
+  if cargo fmt --manifest-path="$manifest" --all --check | tee "$TMP_FILE"; then
     echo "clippy passed for $label"
   else
     echo "::error ::clippy failed for $label! Check logs." | tee -a "$LOG_FILE"
