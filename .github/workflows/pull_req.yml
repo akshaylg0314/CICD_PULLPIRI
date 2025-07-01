@@ -1,0 +1,16 @@
+name: CI On Pull Request
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '**/*.rs'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'scripts/**'
+  push:
+    branches: [main]
+
+jobs:
+  run-core-ci:
+    uses: ./.github/workflows/run-ci.yml

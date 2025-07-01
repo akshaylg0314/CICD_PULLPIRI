@@ -16,9 +16,33 @@ common_packages=(
   curl
   libssl-dev
   nodejs
+  npm
 )
 DEBIAN_FRONTEND=noninteractive apt-get install -y "${common_packages[@]}"
 echo "✅ Base packages installed successfully."
+
+# ✅ Ensure rustup and Rust components (clippy + rustfmt) are installed
+echo "🦀 Installing rustup, Clippy, and Rustfmt..."
+if ! command -v rustup &>/dev/null; then
+  curl https://sh.rustup.rs -sSf | sh -s -- -y
+  source "$HOME/.cargo/env"
+fi
+
+# Add cargo binaries to PATH for non-login shells
+export PATH="$HOME/.cargo/bin:$PATH"
+
+# Install Clippy
+rustup component add clippy
+
+# Install rustfmt
+rustup component add rustfmt
+
+# Check versions to verify
+echo "📌 Installed versions:"
+cargo clippy --version
+cargo fmt --version
+
+echo "✅ Clippy and Rustfmt installed successfully."
 
 # Install etcd and etcdctl
 echo "🔧 Installing etcd..."

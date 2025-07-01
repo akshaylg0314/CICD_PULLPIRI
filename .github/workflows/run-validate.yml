@@ -1,0 +1,15 @@
+name: Validate Workflow YAML
+
+on:
+  workflow_call:
+
+jobs:
+  validate_yaml:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate workflows
+        run: |
+          for file in .github/workflows/*.yml; do
+            yq eval '.' "$file" > /dev/null
+          done

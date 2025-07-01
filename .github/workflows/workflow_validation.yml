@@ -1,0 +1,11 @@
+name: Validate Workflow Syntax
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/*.yml'
+
+jobs:
+  run-yaml-validation:
+    uses: ./.github/workflows/run-validate.yml
