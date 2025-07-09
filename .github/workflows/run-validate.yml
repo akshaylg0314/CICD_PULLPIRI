@@ -2,6 +2,7 @@ name: Validate Workflow YAML
 
 on:
   workflow_call:
+  workflow_dispatch:
 
 jobs:
   validate_yaml:

@@ -2,6 +2,7 @@ name: Doc CI
 
 on:
   workflow_call:
+  workflow_dispatch:
 
 jobs:
   doc_lint:
