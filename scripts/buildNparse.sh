@@ -25,7 +25,7 @@ FAILED_TOTAL=0
 for manifest in "${MANIFESTS[@]}"; do
   echo "📦 Building $manifest..." | tee -a "$LOG_FILE"
   if cargo build -vv --manifest-path="$manifest" | tee "$TMP_FILE"; then
-    echo "✅ Build succeeded for $manifest" | tee -a "$LOG_FILE"
+    echo "Build succeeded for $manifest" | tee -a "$LOG_FILE"
   else
     echo "::error ::Build failed for $manifest!" | tee -a "$LOG_FILE"
     FAILED_TOTAL=$((FAILED_TOTAL + 1))
