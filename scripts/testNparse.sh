@@ -3,8 +3,8 @@ set -euo pipefail
 
 LOG_FILE="test_results.log"
 TMP_FILE="test_output.txt"
-REPORT_FILE="test_summary.md"
-
+mkdir -p dist/reports
+REPORT_FILE="dist/reports/test_summary.md"
 rm -f "$LOG_FILE" "$TMP_FILE" "$REPORT_FILE"
 
 echo "Running Cargo Tests..." | tee -a "$LOG_FILE"

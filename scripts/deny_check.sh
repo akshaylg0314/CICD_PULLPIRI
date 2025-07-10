@@ -3,7 +3,8 @@ set -euo pipefail
 
 LOG_FILE="deny_results.log"
 TMP_FILE="deny_output.txt"
-REPORT_FILE="deny_summary.md"
+mkdir -p dist/reports
+REPORT_FILE="dist/reports/deny_summary.md"
 
 rm -f "$LOG_FILE" "$TMP_FILE" "$REPORT_FILE"
 
