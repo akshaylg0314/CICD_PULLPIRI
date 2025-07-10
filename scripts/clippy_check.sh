@@ -3,8 +3,8 @@ set -euo pipefail
 
 LOG_FILE="clippy_results.log"
 TMP_FILE="clippy_output.txt"
-REPORT_FILE="clippy_summary.md"
-
+mkdir -p dist/reports
+REPORT_FILE="dist/reports/clippy_summary.md"
 rm -f "$LOG_FILE" "$TMP_FILE" "$REPORT_FILE"
 
 echo "Running Cargo clippy..." | tee -a "$LOG_FILE"
