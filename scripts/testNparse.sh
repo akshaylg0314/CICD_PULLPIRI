@@ -56,20 +56,24 @@ run_tests() {
 
   echo "🧪 Running unit tests for $label" | tee -a "$LOG_FILE"
 
-  if RUSTC_BOOTSTRAP=1 cargo nextest run --manifest-path="$manifest" --message-format json \
+  if ! RUSTC_BOOTSTRAP=1 cargo nextest run --manifest-path="$manifest" --message-format json \
       | tee "$TMP_FILE" | cargo2junit > "$test_xml"; then
-    echo "✅ Tests passed for $label" | tee -a "$LOG_FILE"
-  else
     echo "::error ::Tests failed for $label!" | tee -a "$LOG_FILE"
+    FAILED_TOTAL=$((FAILED_TOTAL + 1))
+    return 1
+  else
+    echo "✅ Tests passed for $label" | tee -a "$LOG_FILE"
   fi
 
   echo "📚 Running doctests for $label"
-  if RUSTC_BOOTSTRAP=1 cargo test --manifest-path="$manifest" --doc -- -Z unstable-options --format json \
-      | tee doctest-output.json && [[ -s doctest-output.json ]]; then
+  if ! RUSTC_BOOTSTRAP=1 cargo test --manifest-path="$manifest" --doc -- -Z unstable-options --format json \
+      | tee doctest-output.json || [[ ! -s doctest-output.json ]]; then
+    echo "::error ::Doctests failed for $label or no output." | tee -a "$LOG_FILE"
+    FAILED_TOTAL=$((FAILED_TOTAL + 1))
+    return 1
+  else
     cat doctest-output.json | cargo2junit > "$doc_xml"
     rm -f doctest-output.json
-  else
-    echo "::error ::Doctests failed for $label or no output." | tee -a "$LOG_FILE"
   fi
 
   # Parse result counts
@@ -94,7 +98,7 @@ trap cleanup EXIT
 [[ -f "$TOOLS_MANIFEST" ]] && run_tests "$TOOLS_MANIFEST" "tools" || echo "::warning ::$TOOLS_MANIFEST not found"
 [[ -f "$AGENT_MANIFEST" ]] && run_tests "$AGENT_MANIFEST" "agent" || echo "::warning ::$AGENT_MANIFEST not found"
 
-# Summary
+# Final summary
 echo "✅ Tests Passed: $PASSED_TOTAL" | tee -a "$LOG_FILE"
 echo "❌ Tests Failed: $FAILED_TOTAL" | tee -a "$LOG_FILE"
 
