@@ -48,7 +48,7 @@ pushbuilder:
 	docker buildx build --push --platform linux/amd64,linux/arm64 -t ghcr.io/eclipse-pullpiri/pullpiribuilder:latest -f containers/builder/Dockerfile-pullpiribuilder .
 	docker buildx build --push --platform linux/amd64,linux/arm64 -t ghcr.io/eclipse-pullpiri/pullpirirelease:latest -f containers/builder/Dockerfile-pullpirirelease .
 
-#.PHONY: pre
+#.PHONY: pre default
 #pre:
 #	-mkdir -p /etc/piccolo/yaml
 #	-mkdir -p /etc/containers/systemd/piccolo/
