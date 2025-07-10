@@ -25,6 +25,9 @@ jobs:
               - '**/*.toml'
               - 'Cargo.lock'
               - 'scripts/**'
+              - 'Makefile'
+              - '**/*.yaml'
+              - '**/*.sh'
             docs:
               - '**/*.md'
             yaml:
