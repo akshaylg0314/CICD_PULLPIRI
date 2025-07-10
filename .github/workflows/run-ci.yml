@@ -11,15 +11,30 @@ jobs:
       image: rust:latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install deps
+      - name: Install dependencies
         run: ./scripts/installdeps.sh
-      - name: Build
+      - name: Run build and parse
         run: ./scripts/buildNparse.sh
-      - name: Test
+      - name: Run tests and generate report
         run: ./scripts/testNparse.sh
-      - name: Lint
+      - name: Run lint and generate report
         run: ./scripts/clippy_check.sh
-      - name: Format
+      - name: Run format check and generate report
         run: ./scripts/fmt_check.sh
-      - name: Cargo Deny (License, Advisories, Bans)
+      - name: Run cargo-deny checks and generate report
         run: ./scripts/deny_check.sh
+      - name: Upload deny report
+        uses: actions/upload-artifact@v4
+        with:
+          name: deny-report
+          path: deny_summary.md
+      - name: Upload fmt report
+        uses: actions/upload-artifact@v4
+        with:
+          name: fmt-report
+          path: fmt_summary.md
+      - name: Upload test report
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report
+          path: test_summary.md
