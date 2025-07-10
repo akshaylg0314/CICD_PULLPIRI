@@ -14,10 +14,10 @@ jobs:
     uses: ./.github/workflows/run-rust-ci.yml
 
   run-doc-lint:
-    uses: ./.github/workflows/run-doc-lint.yml
+    uses: ./.github/workflows/run-doc.yml
 
   run-yaml-validation:
-    uses: ./.github/workflows/run-yaml-validation.yml
+    uses: ./.github/workflows/run-validate.yml
 
   tag_release_artifacts:
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
