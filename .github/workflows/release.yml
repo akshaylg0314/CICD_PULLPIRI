@@ -49,7 +49,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: test-report
-          path: dist/reports/test/
+          path: dist/tests/
 
       # - name: Download docs report
       #   uses: actions/download-artifact@v4
@@ -78,7 +78,8 @@ jobs:
         id: upload_test_report
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: dist/reports/test/test_summary.md
+          file: dist/tests/*
+          file_glob: true
           tag: ${{ github.ref }}
 
       # - name: Upload docs report to release

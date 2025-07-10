@@ -9,15 +9,18 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: rust:latest
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Install dependencies
         run: ./scripts/installdeps.sh
-      
+
       - name: Create reports directory
-        run: mkdir -p dist/reports
-        
+        run: |
+          mkdir -p dist/reports
+          mkdir -p dist/tests
+
       - name: Run build and parse
         run: ./scripts/buildNparse.sh
 
@@ -46,6 +49,7 @@ jobs:
           path: dist/reports/fmt_summary.md
 
       - name: Upload test report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-report
