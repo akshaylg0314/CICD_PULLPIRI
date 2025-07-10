@@ -45,6 +45,12 @@ if ! command -v cargo-deny &>/dev/null; then
   cargo install cargo-deny
 fi
 
+# Install cargo-nextest
+if ! command -v cargo-nextest &>/dev/null; then
+  echo "🔐 Installing cargo-nextest..."
+  cargo install cargo-nextest
+fi
+
 # Show installed versions
 echo "📌 Installed Rust toolchain versions:"
 cargo --version
