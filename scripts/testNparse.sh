@@ -103,7 +103,6 @@ else
   echo "::warning ::$AGENT_MANIFEST not found, skipping..." | tee -a "$LOG_FILE"
 fi
 
-# Uncomment and enable when ready
 # if [[ -f "$FILTERGATEWAY_MANIFEST" ]]; then
 #   run_tests "$FILTERGATEWAY_MANIFEST" "filtergateway"
 # else

@@ -103,7 +103,7 @@ jobs:
           artifacts_testing: ${{ steps.upload_test_report.outputs.browser_download_url }}
           artifacts_formatting: ${{ steps.upload_fmt_report.outputs.browser_download_url }}
           artifacts_licenses: ${{ steps.upload_deny_report.outputs.browser_download_url }}
-          artifacts_docs: ${{ steps.upload_docs_report.outputs.browser_download_url }}
+          # artifacts_docs: ${{ steps.upload_docs_report.outputs.browser_download_url }}
 
       - name: Upload quality manifest to release
         uses: svenstaro/upload-release-action@v2
