@@ -56,13 +56,10 @@ run_tests() {
 
   echo "🧪 Running unit tests for $label" | tee -a "$LOG_FILE"
 
-  if ! RUSTC_BOOTSTRAP=1 cargo nextest run --manifest-path="$manifest" --message-format json \
-      | tee "$TMP_FILE" | cargo2junit > "$test_xml"; then
+  if ! cargo nextest run --manifest-path="$manifest" | tee "$TMP_FILE"; then
     echo "::error ::Tests failed for $label!" | tee -a "$LOG_FILE"
     FAILED_TOTAL=$((FAILED_TOTAL + 1))
     return 1
-  else
-    echo "✅ Tests passed for $label" | tee -a "$LOG_FILE"
   fi
 
   echo "📚 Running doctests for $label"
@@ -72,6 +69,11 @@ run_tests() {
     FAILED_TOTAL=$((FAILED_TOTAL + 1))
     return 1
   else
+    # Make sure cargo2junit is installed
+    if ! command -v cargo2junit &> /dev/null; then
+      echo "::error ::cargo2junit not found. Please install it using 'cargo install cargo2junit'."
+      exit 1
+    fi
     cat doctest-output.json | cargo2junit > "$doc_xml"
     rm -f doctest-output.json
   fi
@@ -82,6 +84,7 @@ run_tests() {
   PASSED_TOTAL=$((PASSED_TOTAL + ${passed:-0}))
   FAILED_TOTAL=$((FAILED_TOTAL + ${failed:-0}))
 }
+
 
 # Run components
 [[ -f "$COMMON_MANIFEST" ]] && run_tests "$COMMON_MANIFEST" "common" || echo "::warning ::$COMMON_MANIFEST not found"

@@ -51,6 +51,12 @@ if ! command -v cargo-nextest &>/dev/null; then
   cargo install cargo-nextest
 fi
 
+# Install cargo2junit
+if ! command -v cargo2junit &>/dev/null; then
+  echo "🔐 Installing cargo2junit..."
+  cargo install cargo2junit
+fi
+
 # Show installed versions
 echo "📌 Installed Rust toolchain versions:"
 cargo --version
