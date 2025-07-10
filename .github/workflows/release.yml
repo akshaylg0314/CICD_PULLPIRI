@@ -11,7 +11,7 @@ concurrency:
 
 jobs:
   run-rust-ci:
-    uses: ./.github/workflows/run-rust-ci.yml
+    uses: ./.github/workflows/run-ci.yml
 
   run-doc-lint:
     uses: ./.github/workflows/run-doc.yml
