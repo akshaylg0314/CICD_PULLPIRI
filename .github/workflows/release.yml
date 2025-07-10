@@ -51,11 +51,11 @@ jobs:
           name: test-report
           path: dist/reports/test/
 
-      - name: Download docs report
-        uses: actions/download-artifact@v4
-        with:
-          name: docs-report
-          path: dist/reports/docs/
+      # - name: Download docs report
+      #   uses: actions/download-artifact@v4
+      #   with:
+      #     name: docs-report
+      #     path: dist/reports/docs/
 
       - name: Upload deny report to release
         uses: svenstaro/upload-release-action@v2
@@ -81,13 +81,13 @@ jobs:
           file: dist/reports/test/test_summary.md
           tag: ${{ github.ref }}
 
-      - name: Upload docs report to release
-        uses: svenstaro/upload-release-action@v2
-        id: upload_docs_report
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: dist/reports/docs/docs_report.md
-          tag: ${{ github.ref }}
+      # - name: Upload docs report to release
+      #   uses: svenstaro/upload-release-action@v2
+      #   id: upload_docs_report
+      #   with:
+      #     repo_token: ${{ secrets.GITHUB_TOKEN }}
+      #     file: dist/reports/docs/docs_report.md
+      #     tag: ${{ github.ref }}
 
       - name: Gets latest created release info
         id: latest_release_info
