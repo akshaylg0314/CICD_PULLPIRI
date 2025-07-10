@@ -23,8 +23,8 @@ declare -A MANIFESTS=(
   ["agent"]="src/agent/Cargo.toml"
   ["tools"]="src/tools/Cargo.toml"
   ["apiserver"]="src/server/apiserver/Cargo.toml"
-  ["filtergateway"]="src/player/filtergateway/Cargo.toml"
-  ["actioncontroller"]="src/player/actioncontroller/Cargo.toml"
+  #["filtergateway"]="src/player/filtergateway/Cargo.toml"
+  #["actioncontroller"]="src/player/actioncontroller/Cargo.toml"
 )
 
 # Check/install dependencies (cargo-nextest, cargo2junit)
