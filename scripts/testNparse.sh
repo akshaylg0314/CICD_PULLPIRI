@@ -46,33 +46,33 @@ trap cleanup EXIT
 run_tests() {
   local manifest="$1"
   local label="$2"
+  local output_json="target/${label}_test_output.json"
 
   echo "Running tests for $label ($manifest)" | tee -a "$LOG_FILE"
 
-  JSON_OUTPUT="target/${label}_test_output.json"
-  XML_OUTPUT="dist/tests/${label}_results.xml"
-
-  if RUSTC_BOOTSTRAP=1 cargo test $FEATURE_FLAGS --manifest-path="$manifest" \
-      -- -Z unstable-options --format json --report-time | tee "$JSON_OUTPUT"; then
+  # Run tests and dump JSON to file
+  if RUSTC_BOOTSTRAP=1 cargo test --manifest-path="$manifest" -- -Z unstable-options --format json | tee "$output_json"; then
     echo "Tests passed for $label"
   else
     echo "::error ::Tests failed for $label! Check logs." | tee -a "$LOG_FILE"
   fi
 
-  if [[ -f "$JSON_OUTPUT" ]]; then
-    cat "$JSON_OUTPUT" | cargo2junit > "$XML_OUTPUT"
-  else
-    echo "::warning ::No test output JSON found for $label"
-  fi
-
+  # Parse passed/failed
   local passed
   local failed
 
-  passed=$(grep -oP '\d+ passed' "$JSON_OUTPUT" | awk '{sum += $1} END {print sum}')
-  failed=$(grep -oP '\d+ failed' "$JSON_OUTPUT" | awk '{sum += $1} END {print sum}')
+  passed=$(grep -oP '\d+ passed' "$output_json" | awk '{sum += $1} END {print sum}')
+  failed=$(grep -oP '\d+ failed' "$output_json" | awk '{sum += $1} END {print sum}')
 
   PASSED_TOTAL=$((PASSED_TOTAL + passed))
   FAILED_TOTAL=$((FAILED_TOTAL + failed))
+
+  # Convert to JUnit XML
+  if command -v cargo2junit &>/dev/null; then
+    cat "$output_json" | cargo2junit > "dist/tests/${label}_results.xml"
+  else
+    echo "::warning ::cargo2junit not installed, skipping XML conversion"
+  fi
 }
 
 # Run common tests
