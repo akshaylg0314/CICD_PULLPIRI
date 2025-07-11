@@ -37,12 +37,14 @@ jobs:
         run: ./scripts/deny_check.sh
 
       - name: Upload deny report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: deny-report
           path: dist/reports/deny_summary.md
 
       - name: Upload fmt report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: fmt-report
@@ -54,4 +56,3 @@ jobs:
         with:
           name: test-report
           path: dist/tests/*
-          file_glob: true

@@ -19,6 +19,12 @@ jobs:
   run-yaml-validation:
     uses: ./.github/workflows/run-validate.yml
 
+  run-license-report:
+    uses: ./.github/workflows/run-license-report.yml
+    with:
+      templates: "about.hbs"         # or path to directory
+      config: "about.toml"
+
   tag_release_artifacts:
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     name: Collect and upload release artifacts
@@ -27,6 +33,7 @@ jobs:
       - run-rust-ci
       - run-doc-lint
       - run-yaml-validation
+      - run-license-report
     permissions: write-all
     steps:
       - uses: actions/checkout@v4
@@ -50,6 +57,12 @@ jobs:
         with:
           name: test-report
           path: dist/tests/
+      
+      - name: Download license report
+        uses: actions/download-artifact@v4
+        with:
+          name: license-report
+          path: dist/reports/license/
 
       # - name: Download docs report
       #   uses: actions/download-artifact@v4
@@ -57,6 +70,7 @@ jobs:
       #     name: docs-report
       #     path: dist/reports/docs/
 
+      
       - name: Upload deny report to release
         uses: svenstaro/upload-release-action@v2
         id: upload_deny_report
@@ -81,6 +95,14 @@ jobs:
           file: dist/tests/*
           file_glob: true
           tag: ${{ github.ref }}
+      
+      - name: Upload license report to release
+        uses: svenstaro/upload-release-action@v2
+        id: upload_license_report
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: dist/reports/license/licenses.html
+          tag: ${{ github.ref }}
 
       # - name: Upload docs report to release
       #   uses: svenstaro/upload-release-action@v2
@@ -95,6 +117,15 @@ jobs:
         uses: joutvhu/get-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      # README - we later need the download_url output of the upload step
+      - name: Upload README to release
+        uses: svenstaro/upload-release-action@v2
+        id: upload_readme
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: README.md
+          tag: ${{ github.ref }}
 
       - name: Collect quality artifacts with quevee
         id: quevee_manifest
@@ -103,7 +134,8 @@ jobs:
           release_url: ${{ steps.latest_release_info.outputs.html_url }}
           artifacts_testing: ${{ steps.upload_test_report.outputs.browser_download_url }}
           artifacts_formatting: ${{ steps.upload_fmt_report.outputs.browser_download_url }}
-          artifacts_licenses: ${{ steps.upload_deny_report.outputs.browser_download_url }}
+          artifacts_readme: ${{ steps.upload_readme.outputs.browser_download_url }}
+          artifacts_licenses: ${{ steps.upload_license_report.outputs.browser_download_url }}
           # artifacts_docs: ${{ steps.upload_docs_report.outputs.browser_download_url }}
 
       - name: Upload quality manifest to release

@@ -1,0 +1,54 @@
+name: License report
+
+on:
+  workflow_call:
+    inputs:
+      templates:
+        description: |
+          The template(s) or template directory to use. Must either be a `.hbs` file, or have at least one `.hbs` file in it if it is a directory. The path must be relative to the crate's manifest root.
+          Please refer to https://embarkstudios.github.io/cargo-about/cli/generate/index.html for details.
+        type: string
+        required: true
+      config:
+        description: |
+          The path to the cargo about configuration to use. The path must be relative to the crate's manifest root.
+          Please refer to https://embarkstudios.github.io/cargo-about/cli/generate/index.html for details.
+        type: string
+        default: "about.toml"
+        required: false
+    outputs:
+      license_report_url:
+        description: "URL of the license report artifact"
+        value: ${{ jobs.license_check.outputs.license_report_url }}
+          
+env:
+    RUST_TOOLCHAIN: ${{ vars.RUST_TOOLCHAIN || 'stable' }}
+    RUSTFLAGS: -Dwarnings
+    CARGO_TERM_COLOR: always
+      
+jobs:
+  license_check:
+    name: create
+    runs-on: ubuntu-latest
+    outputs:
+      license_report_url: ${{ steps.license_report.outputs.artifact-url }}
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: "recursive"
+    - uses: dtolnay/rust-toolchain@master
+      with: 
+        toolchain: ${{ env.RUST_TOOLCHAIN }}
+    - uses: Swatinem/rust-cache@v2
+
+    - name: Install cargo-about
+      run: |
+        cargo install cargo-about
+    - name: Create license report
+      run: |
+        cargo about generate --config ${{ inputs.config }} ${{ inputs.templates }} > licenses.html
+    - uses: actions/upload-artifact@v4
+      id: license_report
+      with:
+        name: license-report
+        path: licenses.html
