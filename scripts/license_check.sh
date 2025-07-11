@@ -43,7 +43,7 @@ for manifest in "${MANIFESTS[@]}"; do
     (
       cd "$dir"
       mkdir -p dist/licenses  # ensure the output dir exists inside the crate too
-      cargo about generate --config "../../$CONFIG" "../../$TEMPLATE" > "../../dist/licenses/${label}_licenses.html"
+      cargo about generate --config "../../$CONFIG" "../../$TEMPLATE"
     )
   else
     echo "::warning ::Manifest $manifest not found, skipping..." | tee -a "$LOG_FILE"
