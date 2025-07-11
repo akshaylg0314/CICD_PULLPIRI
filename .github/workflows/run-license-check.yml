@@ -1,0 +1,31 @@
+name: License Report Generator
+
+on:
+  workflow_call:
+
+jobs:
+  license_report:
+    name: Generate License Reports
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install cargo-about
+        run: cargo install cargo-about
+
+      - name: Run license check script
+        run: ./scripts/license_check.sh
+
+      - name: Upload license reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: license-report
+          path: dist/licenses/
