@@ -1,6 +1,9 @@
 #!/bin/bash
 set -euo pipefail
 
+# Enable JSON test output even on stable Rust
+export RUSTC_BOOTSTRAP=1
+
 echo "🛠️ Updating package lists..."
 apt-get update -y
 

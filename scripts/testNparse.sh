@@ -34,7 +34,13 @@ start_service() {
 
 cleanup() {
   echo -e "\nCleaning up background services..." | tee -a "$LOG_FILE"
-  kill "${PIDS[@]}" 2>/dev/null || true
+  if [[ ${#PIDS[@]} -gt 0 ]]; then
+    for pid in "${PIDS[@]}"; do
+      if kill -0 "$pid" &>/dev/null; then
+        kill "$pid" 2>/dev/null || echo "⚠️ Failed to kill process $pid"
+      fi
+    done
+  fi
 }
 trap cleanup EXIT
 
@@ -47,9 +53,9 @@ run_tests() {
   echo "Running tests for $label ($manifest)" | tee -a "$LOG_FILE"
 
   if RUSTC_BOOTSTRAP=1 cargo test --manifest-path="$manifest" -- -Z unstable-options --format json | tee "$output_json"; then
-    echo "Tests passed for $label"
+    echo "✅ Tests passed for $label" | tee -a "$LOG_FILE"
   else
-    echo "::error ::Tests failed for $label! Check logs." | tee -a "$LOG_FILE"
+    echo "::error ::❌ Tests failed for $label! Check logs." | tee -a "$LOG_FILE"
   fi
 
   if [[ -f "$output_json" ]]; then
@@ -59,7 +65,7 @@ run_tests() {
     FAILED_TOTAL=$((FAILED_TOTAL + failed))
 
     if command -v cargo2junit &>/dev/null; then
-      cat "$output_json" | cargo2junit > "$report_xml"
+      cargo2junit < "$output_json" > "$report_xml"
     else
       echo "::warning ::cargo2junit not installed, skipping XML conversion"
     fi
@@ -69,11 +75,7 @@ run_tests() {
 }
 
 # Run common tests
-if [[ -f "$COMMON_MANIFEST" ]]; then
-  run_tests "$COMMON_MANIFEST" "common"
-else
-  echo "::warning ::$COMMON_MANIFEST not found, skipping..."
-fi
+[[ -f "$COMMON_MANIFEST" ]] && run_tests "$COMMON_MANIFEST" "common" || echo "::warning ::$COMMON_MANIFEST not found, skipping..."
 
 # Start services required for apiserver
 start_service "$FILTERGATEWAY_MANIFEST" "filtergateway"
@@ -81,50 +83,33 @@ start_service "$AGENT_MANIFEST" "nodeagent"
 sleep 3
 
 # Run apiserver tests
-if [[ -f "$APISERVER_MANIFEST" ]]; then
-  run_tests "$APISERVER_MANIFEST" "apiserver"
-else
-  echo "::warning ::$APISERVER_MANIFEST not found, skipping..."
-fi
+[[ -f "$APISERVER_MANIFEST" ]] && run_tests "$APISERVER_MANIFEST" "apiserver" || echo "::warning ::$APISERVER_MANIFEST not found, skipping..."
 
+# Cleanup after apiserver-related tests
 cleanup
 PIDS=()
 trap cleanup EXIT
 
-# Run tools tests
-if [[ -f "$TOOLS_MANIFEST" ]]; then
-  run_tests "$TOOLS_MANIFEST" "tools"
-else
-  echo "::warning ::$TOOLS_MANIFEST not found, skipping..."
-fi
+# Run other components
+[[ -f "$TOOLS_MANIFEST" ]] && run_tests "$TOOLS_MANIFEST" "tools" || echo "::warning ::$TOOLS_MANIFEST not found, skipping..."
+[[ -f "$AGENT_MANIFEST" ]] && run_tests "$AGENT_MANIFEST" "agent" || echo "::warning ::$AGENT_MANIFEST not found, skipping..."
+# [[ -f "$FILTERGATEWAY_MANIFEST" ]] && run_tests "$FILTERGATEWAY_MANIFEST" "filtergateway"
+# [[ -f "$ACTIONCONTROLLER_MANIFEST" ]] && run_tests "$ACTIONCONTROLLER_MANIFEST" "actioncontroller"
 
-# Run agent tests
-if [[ -f "$AGENT_MANIFEST" ]]; then
-  run_tests "$AGENT_MANIFEST" "agent"
-else
-  echo "::warning ::$AGENT_MANIFEST not found, skipping..."
-fi
-
-# Optional - Run these only if ready
-# if [[ -f "$FILTERGATEWAY_MANIFEST" ]]; then run_tests "$FILTERGATEWAY_MANIFEST" "filtergateway"; fi
-# if [[ -f "$ACTIONCONTROLLER_MANIFEST" ]]; then run_tests "$ACTIONCONTROLLER_MANIFEST" "actioncontroller"; fi
-
-# Summarize result
+# Combine all test XMLs into one summary report
 echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" > "$REPORT_FILE"
 echo "<testsuites>" >> "$REPORT_FILE"
-
 for xml in dist/tests/*_results.xml; do
   [[ -f "$xml" ]] && cat "$xml" >> "$REPORT_FILE"
 done
-
 echo "</testsuites>" >> "$REPORT_FILE"
 
-echo "Tests Passed: $PASSED_TOTAL" | tee -a "$LOG_FILE"
-echo "Tests Failed: $FAILED_TOTAL" | tee -a "$LOG_FILE"
+echo "✅ Tests Passed: $PASSED_TOTAL" | tee -a "$LOG_FILE"
+echo "❌ Tests Failed: $FAILED_TOTAL" | tee -a "$LOG_FILE"
 
 if [[ "$FAILED_TOTAL" -gt 0 ]]; then
   echo "::error ::Some tests failed!" | tee -a "$LOG_FILE"
   exit 1
 fi
 
-echo "All tests passed successfully!" | tee -a "$LOG_FILE"
+echo "🎉 All tests passed successfully!" | tee -a "$LOG_FILE"
