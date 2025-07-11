@@ -21,8 +21,8 @@ MANIFESTS=(
 )
 
 # Path to the config and template (update based on your project layout)
-TEMPLATE="src/server/about.hbs"
-CONFIG="src/server/about.toml"
+TEMPLATE="about.hbs"
+CONFIG="about.toml"
 
 echo "Using template: $TEMPLATE" | tee -a "$LOG_FILE"
 echo "Using config: $CONFIG" | tee -a "$LOG_FILE"
@@ -43,7 +43,7 @@ for manifest in "${MANIFESTS[@]}"; do
     (
       cd "$dir"
       mkdir -p dist/licenses  # ensure the output dir exists inside the crate too
-      cargo about generate --config "../../$CONFIG" "../../$TEMPLATE"
+      cargo about generate --config "../$CONFIG" "../$TEMPLATE"
     )
   else
     echo "::warning ::Manifest $manifest not found, skipping..." | tee -a "$LOG_FILE"
