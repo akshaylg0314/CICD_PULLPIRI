@@ -3,10 +3,9 @@ set -euo pipefail
 
 LOG_FILE="test_results.log"
 TMP_FILE="test_output.txt"
-mkdir -p dist/tests
-rm -f "$LOG_FILE" "$TMP_FILE"
-
-FEATURE_FLAGS="${1:-}"  # Optional: pass "--all-features", etc.
+mkdir -p dist/tests target
+REPORT_FILE="dist/tests/test_summary.xml"
+rm -f "$LOG_FILE" "$TMP_FILE" "$REPORT_FILE"
 
 echo "Running Cargo Tests..." | tee -a "$LOG_FILE"
 
@@ -25,53 +24,47 @@ APISERVER_MANIFEST="src/server/apiserver/Cargo.toml"
 FILTERGATEWAY_MANIFEST="src/player/filtergateway/Cargo.toml"
 ACTIONCONTROLLER_MANIFEST="src/player/actioncontroller/Cargo.toml"
 
-# Start background service and save its PID
 start_service() {
   local manifest="$1"
   local name="$2"
-
   echo "Starting $name component for testing..." | tee -a "$LOG_FILE"
   cargo run --manifest-path="$manifest" &>> "$LOG_FILE" &
   PIDS+=($!)
 }
 
-# Ensure background processes are cleaned up
 cleanup() {
-  echo -e "\n Cleaning up background services..." | tee -a "$LOG_FILE"
+  echo -e "\nCleaning up background services..." | tee -a "$LOG_FILE"
   kill "${PIDS[@]}" 2>/dev/null || true
 }
 trap cleanup EXIT
 
-# Run and parse test output
 run_tests() {
   local manifest="$1"
   local label="$2"
   local output_json="target/${label}_test_output.json"
+  local report_xml="dist/tests/${label}_results.xml"
 
   echo "Running tests for $label ($manifest)" | tee -a "$LOG_FILE"
 
-  # Run tests and dump JSON to file
   if RUSTC_BOOTSTRAP=1 cargo test --manifest-path="$manifest" -- -Z unstable-options --format json | tee "$output_json"; then
     echo "Tests passed for $label"
   else
     echo "::error ::Tests failed for $label! Check logs." | tee -a "$LOG_FILE"
   fi
 
-  # Parse passed/failed
-  local passed
-  local failed
+  if [[ -f "$output_json" ]]; then
+    passed=$(grep -oP '\d+ passed' "$output_json" | awk '{sum += $1} END {print sum}')
+    failed=$(grep -oP '\d+ failed' "$output_json" | awk '{sum += $1} END {print sum}')
+    PASSED_TOTAL=$((PASSED_TOTAL + passed))
+    FAILED_TOTAL=$((FAILED_TOTAL + failed))
 
-  passed=$(grep -oP '\d+ passed' "$output_json" | awk '{sum += $1} END {print sum}')
-  failed=$(grep -oP '\d+ failed' "$output_json" | awk '{sum += $1} END {print sum}')
-
-  PASSED_TOTAL=$((PASSED_TOTAL + passed))
-  FAILED_TOTAL=$((FAILED_TOTAL + failed))
-
-  # Convert to JUnit XML
-  if command -v cargo2junit &>/dev/null; then
-    cat "$output_json" | cargo2junit > "dist/tests/${label}_results.xml"
+    if command -v cargo2junit &>/dev/null; then
+      cat "$output_json" | cargo2junit > "$report_xml"
+    else
+      echo "::warning ::cargo2junit not installed, skipping XML conversion"
+    fi
   else
-    echo "::warning ::cargo2junit not installed, skipping XML conversion"
+    echo "::warning ::No test output JSON found for $label"
   fi
 }
 
@@ -85,8 +78,6 @@ fi
 # Start services required for apiserver
 start_service "$FILTERGATEWAY_MANIFEST" "filtergateway"
 start_service "$AGENT_MANIFEST" "nodeagent"
-
-# Wait for services to be ready (simple delay)
 sleep 3
 
 # Run apiserver tests
@@ -96,10 +87,7 @@ else
   echo "::warning ::$APISERVER_MANIFEST not found, skipping..."
 fi
 
-# Stop only those services needed for apiserver
 cleanup
-
-# Re-setup trap for any new background processes started later
 PIDS=()
 trap cleanup EXIT
 
@@ -117,19 +105,19 @@ else
   echo "::warning ::$AGENT_MANIFEST not found, skipping..."
 fi
 
-# Run filtergateway tests (development is under progress)
-# if [[ -f "$FILTERGATEWAY_MANIFEST" ]]; then
-#   run_tests "$FILTERGATEWAY_MANIFEST" "filtergateway"
-# else
-#   echo "::warning ::$FILTERGATEWAY_MANIFEST not found, skipping..."
-# fi
+# Optional - Run these only if ready
+# if [[ -f "$FILTERGATEWAY_MANIFEST" ]]; then run_tests "$FILTERGATEWAY_MANIFEST" "filtergateway"; fi
+# if [[ -f "$ACTIONCONTROLLER_MANIFEST" ]]; then run_tests "$ACTIONCONTROLLER_MANIFEST" "actioncontroller"; fi
 
-# Run actioncontroller tests (development is under progress)
-# if [[ -f "$ACTIONCONTROLLER_MANIFEST" ]]; then
-#   run_tests "$ACTIONCONTROLLER_MANIFEST" "actioncontroller"
-# else
-#   echo "::warning ::$ACTIONCONTROLLER_MANIFEST not found, skipping..."
-# fi
+# Summarize result
+echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" > "$REPORT_FILE"
+echo "<testsuites>" >> "$REPORT_FILE"
+
+for xml in dist/tests/*_results.xml; do
+  [[ -f "$xml" ]] && cat "$xml" >> "$REPORT_FILE"
+done
+
+echo "</testsuites>" >> "$REPORT_FILE"
 
 echo "Tests Passed: $PASSED_TOTAL" | tee -a "$LOG_FILE"
 echo "Tests Failed: $FAILED_TOTAL" | tee -a "$LOG_FILE"
