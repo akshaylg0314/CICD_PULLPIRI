@@ -1,6 +1,9 @@
 #!/bin/bash
 set -euo pipefail
 
+# Enable JSON test output even on stable Rust
+export RUSTC_BOOTSTRAP=1
+
 echo "🛠️ Updating package lists..."
 apt-get update -y
 
@@ -43,6 +46,18 @@ rustup component add rustfmt
 if ! command -v cargo-deny &>/dev/null; then
   echo "🔐 Installing cargo-deny..."
   cargo install cargo-deny
+fi
+
+# Install cargo-nextest
+if ! command -v cargo-nextest &>/dev/null; then
+  echo "🔐 Installing cargo-nextest..."
+  cargo install cargo-nextest
+fi
+
+# Install cargo2junit
+if ! command -v cargo2junit &>/dev/null; then
+  echo "🔐 Installing cargo2junit..."
+  cargo install cargo2junit
 fi
 
 # Show installed versions
