@@ -20,7 +20,7 @@ jobs:
     uses: ./.github/workflows/run-validate.yml
 
   run-license-report:
-    uses: ./.github/workflows/run-license-report.yml
+    uses: ./.github/workflows/run-license-check.yml
     with:
       templates: "about.hbs"         # or path to directory
       config: "about.toml"
