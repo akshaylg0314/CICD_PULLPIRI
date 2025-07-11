@@ -95,6 +95,15 @@ jobs:
         uses: joutvhu/get-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      # README - we later need the download_url output of the upload step
+      - name: Upload README to release
+        uses: svenstaro/upload-release-action@v2
+        id: upload_readme
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: README.md
+          tag: ${{ github.ref }}
 
       - name: Collect quality artifacts with quevee
         id: quevee_manifest
@@ -104,6 +113,7 @@ jobs:
           artifacts_testing: ${{ steps.upload_test_report.outputs.browser_download_url }}
           artifacts_formatting: ${{ steps.upload_fmt_report.outputs.browser_download_url }}
           artifacts_licenses: ${{ steps.upload_deny_report.outputs.browser_download_url }}
+          artifacts_readme: ${{ steps.upload_readme.outputs.browser_download_url }}
           # artifacts_docs: ${{ steps.upload_docs_report.outputs.browser_download_url }}
 
       - name: Upload quality manifest to release
