@@ -59,7 +59,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: license-report
-          path: dist/reports/license/
+          path: dist/licenses/
 
       # - name: Download docs report
       #   uses: actions/download-artifact@v4
@@ -98,7 +98,7 @@ jobs:
         id: upload_license_report
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: dist/reports/license/*
+          file: dist/licenses/*
           file_glob: true
           tag: ${{ github.ref }}
 
