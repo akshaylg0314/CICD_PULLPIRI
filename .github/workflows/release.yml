@@ -60,13 +60,6 @@ jobs:
         with:
           name: license-report
           path: dist/licenses/
-
-      # - name: Download docs report
-      #   uses: actions/download-artifact@v4
-      #   with:
-      #     name: docs-report
-      #     path: dist/reports/docs/
-
       
       - name: Upload deny report to release
         uses: svenstaro/upload-release-action@v2
@@ -98,17 +91,9 @@ jobs:
         id: upload_license_report
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: dist/licenses/*
+          file: dist/licenses/apiserver_licenses.html
           file_glob: true
           tag: ${{ github.ref }}
-
-      # - name: Upload docs report to release
-      #   uses: svenstaro/upload-release-action@v2
-      #   id: upload_docs_report
-      #   with:
-      #     repo_token: ${{ secrets.GITHUB_TOKEN }}
-      #     file: dist/reports/docs/docs_report.md
-      #     tag: ${{ github.ref }}
 
       - name: Gets latest created release info
         id: latest_release_info
@@ -144,7 +129,6 @@ jobs:
           artifacts_readme: ${{ steps.upload_readme.outputs.browser_download_url }}
           artifacts_licenses: ${{ steps.upload_license_report.outputs.browser_download_url }}
           artifacts_coding_guidelines: ${{ steps.upload_coding_guidelines.outputs.browser_download_url }}
-          # artifacts_docs: ${{ steps.upload_docs_report.outputs.browser_download_url }}
 
       - name: Upload quality manifest to release
         uses: svenstaro/upload-release-action@v2
