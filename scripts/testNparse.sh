@@ -5,18 +5,21 @@ LOG_FILE="test_results.log"
 TMP_FILE="test_output.txt"
 mkdir -p dist/tests target
 REPORT_FILE="dist/tests/test_summary.xml"
+
+# Clean up old logs and reports before starting
 rm -f "$LOG_FILE" "$TMP_FILE" "$REPORT_FILE"
 
 echo "Running Cargo Tests..." | tee -a "$LOG_FILE"
 
+# Use GitHub workspace if available, else current directory
 PROJECT_ROOT=${GITHUB_WORKSPACE:-$(pwd)}
 cd "$PROJECT_ROOT"
 
 FAILED_TOTAL=0
 PASSED_TOTAL=0
-PIDS=()
+PIDS=()  # Array to hold background service PIDs
 
-# Declare manifest paths
+# Declare manifest paths for each crate/component
 COMMON_MANIFEST="src/common/Cargo.toml"
 AGENT_MANIFEST="src/agent/Cargo.toml"
 TOOLS_MANIFEST="src/tools/Cargo.toml"
@@ -24,14 +27,17 @@ APISERVER_MANIFEST="src/server/apiserver/Cargo.toml"
 FILTERGATEWAY_MANIFEST="src/player/filtergateway/Cargo.toml"
 ACTIONCONTROLLER_MANIFEST="src/player/actioncontroller/Cargo.toml"
 
+# Function to start a component as background service (for e.g. dependent services)
 start_service() {
   local manifest="$1"
   local name="$2"
   echo "Starting $name component for testing..." | tee -a "$LOG_FILE"
+  # Run the binary in background, append stdout/stderr to log
   cargo run --manifest-path="$manifest" &>> "$LOG_FILE" &
-  PIDS+=($!)
+  PIDS+=($!)  # Store PID for later cleanup
 }
 
+# Cleanup function to kill any background services started by the script
 cleanup() {
   echo -e "\nCleaning up background services..." | tee -a "$LOG_FILE"
   if [[ ${#PIDS[@]} -gt 0 ]]; then
@@ -42,8 +48,9 @@ cleanup() {
     done
   fi
 }
-trap cleanup EXIT
+trap cleanup EXIT  # Ensure cleanup on script exit
 
+# Run tests for a given crate manifest, parse JSON output and generate JUnit XML if possible
 run_tests() {
   local manifest="$1"
   local label="$2"
@@ -52,6 +59,7 @@ run_tests() {
 
   echo "Running tests for $label ($manifest)" | tee -a "$LOG_FILE"
 
+  # Run tests with JSON output, also enabling unstable formatting options (may require nightly)
   if RUSTC_BOOTSTRAP=1 cargo test --manifest-path="$manifest" -- -Z unstable-options --format json | tee "$output_json"; then
     echo "✅ Tests passed for $label" | tee -a "$LOG_FILE"
   else
@@ -59,11 +67,13 @@ run_tests() {
   fi
 
   if [[ -f "$output_json" ]]; then
+    # Aggregate passed/failed counts from JSON output using grep + awk
     passed=$(grep -oP '\d+ passed' "$output_json" | awk '{sum += $1} END {print sum}')
     failed=$(grep -oP '\d+ failed' "$output_json" | awk '{sum += $1} END {print sum}')
     PASSED_TOTAL=$((PASSED_TOTAL + passed))
     FAILED_TOTAL=$((FAILED_TOTAL + failed))
 
+    # Convert JSON test results to JUnit XML format if cargo2junit is available
     if command -v cargo2junit &>/dev/null; then
       cargo2junit < "$output_json" > "$report_xml"
     else
@@ -74,29 +84,31 @@ run_tests() {
   fi
 }
 
-# Run common tests
+# Run tests for the common crate if manifest exists
 [[ -f "$COMMON_MANIFEST" ]] && run_tests "$COMMON_MANIFEST" "common" || echo "::warning ::$COMMON_MANIFEST not found, skipping..."
 
-# Start services required for apiserver
+# Start services required for apiserver tests
 start_service "$FILTERGATEWAY_MANIFEST" "filtergateway"
 start_service "$AGENT_MANIFEST" "nodeagent"
-sleep 3
 
-# Run apiserver tests
+sleep 3  # Give services some time to start before testing
+
+# Run tests for apiserver crate
 [[ -f "$APISERVER_MANIFEST" ]] && run_tests "$APISERVER_MANIFEST" "apiserver" || echo "::warning ::$APISERVER_MANIFEST not found, skipping..."
 
-# Cleanup after apiserver-related tests
+# Cleanup background services after apiserver tests
 cleanup
-PIDS=()
-trap cleanup EXIT
+PIDS=()  # Reset PIDs array
+trap cleanup EXIT  # Reset trap
 
-# Run other components
+# Run tests for other crates
 [[ -f "$TOOLS_MANIFEST" ]] && run_tests "$TOOLS_MANIFEST" "tools" || echo "::warning ::$TOOLS_MANIFEST not found, skipping..."
 [[ -f "$AGENT_MANIFEST" ]] && run_tests "$AGENT_MANIFEST" "agent" || echo "::warning ::$AGENT_MANIFEST not found, skipping..."
+# The following can be enabled if needed:
 # [[ -f "$FILTERGATEWAY_MANIFEST" ]] && run_tests "$FILTERGATEWAY_MANIFEST" "filtergateway"
 # [[ -f "$ACTIONCONTROLLER_MANIFEST" ]] && run_tests "$ACTIONCONTROLLER_MANIFEST" "actioncontroller"
 
-# Combine all test XMLs into one summary report
+# Combine all individual JUnit XML files into a single summary report
 echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" > "$REPORT_FILE"
 echo "<testsuites>" >> "$REPORT_FILE"
 for xml in dist/tests/*_results.xml; do

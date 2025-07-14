@@ -1,21 +1,26 @@
 name: Rust CI Core
 
+# Triggered when called from another workflow or manually via the GitHub UI
 on:
   workflow_call:
   workflow_dispatch:
 
 jobs:
   rust_ci:
+    # Run this job on Ubuntu with the official Rust container
     runs-on: ubuntu-latest
     container:
-      image: rust:latest
+      image: rust:latest  # Ensures a Rust environment is preinstalled
 
     steps:
+      # Checkout the repository
       - uses: actions/checkout@v4
 
+      # Install required system-level dependencies from your custom script
       - name: Install dependencies
         run: ./scripts/installdeps.sh
 
+      # Prepare necessary folders for all output artifacts
       - name: Create reports directory
         run: |
           mkdir -p dist/reports/fmt
@@ -23,21 +28,27 @@ jobs:
           mkdir -p dist/tests
           mkdir -p dist/licenses
 
+      # Build the project and parse any outputs (likely from logs)
       - name: Run build and parse
         run: ./scripts/buildNparse.sh
 
+      # Run all unit/integration tests and convert results to test reports
       - name: Run tests and generate report
         run: ./scripts/testNparse.sh
 
+      # Run Clippy (Rust linter) to catch code issues
       - name: Run lint and generate report
         run: ./scripts/clippy_check.sh
 
+      # Check formatting with `cargo fmt` and write a summary report
       - name: Run format check and generate report
         run: ./scripts/fmt_check.sh
 
+      # Run `cargo-deny` to check license, bans, vulnerabilities etc.
       - name: Run cargo-deny checks and generate report
         run: ./scripts/deny_check.sh
 
+      # Upload deny report even if prior steps failed
       - name: Upload deny report
         if: always()
         uses: actions/upload-artifact@v4
@@ -45,6 +56,7 @@ jobs:
           name: deny-report
           path: dist/reports/deny/deny_summary.md
 
+      # Upload format check report even if tests or other checks failed
       - name: Upload fmt report
         if: always()
         uses: actions/upload-artifact@v4
@@ -52,6 +64,7 @@ jobs:
           name: fmt-report
           path: dist/reports/fmt/fmt_summary.md
 
+      # Upload all test reports, useful for JUnit viewers or release artifacts
       - name: Upload test report
         if: always()
         uses: actions/upload-artifact@v4
