@@ -40,10 +40,13 @@ for manifest in "${MANIFESTS[@]}"; do
     echo "📄 Generating license report for $label ($manifest)" | tee -a "$LOG_FILE"
     dir=$(dirname "$manifest")
 
+    output_path="$PROJECT_ROOT/dist/licenses/${label}_licenses.html"
+
+    # Run cargo-about from inside crate dir, but output to global dist/
     (
       cd "$dir"
-      mkdir -p dist/licenses  # ensure the output dir exists inside the crate too
-      cargo about generate --config "../$CONFIG" "../$TEMPLATE" > "dist/licenses/${label}_licenses.html"
+      echo "🔧 Working in $(pwd), generating $output_path" | tee -a "$LOG_FILE"
+      cargo about generate --config "../$CONFIG" "../$TEMPLATE" > "$output_path"
     )
   else
     echo "::warning ::Manifest $manifest not found, skipping..." | tee -a "$LOG_FILE"
