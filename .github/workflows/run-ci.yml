@@ -58,10 +58,3 @@ jobs:
         with:
           name: test-report
           path: dist/tests/*
-          
-      # - name: Upload license report
-      #   if: always()
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: license-report
-      #     path: dist/licenses/*

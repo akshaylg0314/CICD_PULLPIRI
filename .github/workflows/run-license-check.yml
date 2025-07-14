@@ -29,4 +29,3 @@ jobs:
         with:
           name: license-report
           path: dist/licenses/*
-          file_glob: true
