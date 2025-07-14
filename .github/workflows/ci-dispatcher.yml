@@ -1,5 +1,6 @@
 name: CI Dispatcher
 
+# Trigger CI on pull requests or direct pushes to `main`, or manual dispatch
 on:
   pull_request:
     branches: [main]
@@ -8,6 +9,7 @@ on:
   workflow_dispatch:
 
 jobs:
+  # Job 1: Detect file changes to conditionally run relevant CI workflows
   detect-changes:
     runs-on: ubuntu-latest
     outputs:
@@ -16,38 +18,44 @@ jobs:
       yaml_changed: ${{ steps.filter.outputs.yaml }}
     steps:
       - uses: actions/checkout@v4
+
+      # Use dorny/paths-filter to set outputs based on file changes
       - id: filter
         uses: dorny/paths-filter@v3
         with:
           filters: |
             rust:
-              - '**/*.rs'
-              - '**/*.toml'
-              - 'Cargo.lock'
-              - 'scripts/**'
-              - 'Makefile'
-              - '**/*.yaml'
-              - '**/*.sh'
+              - '**/*.rs'         # Rust source files
+              - '**/*.toml'       # Cargo.toml and related files
+              - 'Cargo.lock'      # Lockfile changes
+              - 'scripts/**'      # Shell scripts that might affect builds
+              - 'Makefile'        # Build or dev tool configs
+              - '**/*.yaml'       # Scenario/config YAMLs used by project
+              - '**/*.sh'         # Bash scripts that might impact runtime
             docs:
-              - '**/*.md'
+              - '**/*.md'         # Markdown files (e.g., README, docs)
             yaml:
-              - '.github/workflows/*.yml'
+              - '.github/workflows/*.yml'  # GitHub Actions workflow changes
 
+  # Job 2: Run Rust CI only if Rust-related files changed
   run-rust-ci:
     needs: detect-changes
     if: needs.detect-changes.outputs.rust_changed == 'true'
     uses: ./.github/workflows/run-ci.yml
 
+  # Job 3: Run documentation lint only if markdown files changed
   run-doc-lint:
     needs: detect-changes
     if: needs.detect-changes.outputs.doc_changed == 'true'
     uses: ./.github/workflows/run-doc.yml
 
+  # Job 4: Run YAML validation only if workflow YAML files changed
   run-yaml-validation:
     needs: detect-changes
     if: needs.detect-changes.outputs.yaml_changed == 'true'
     uses: ./.github/workflows/run-validate.yml
 
+  # Job 5: Print a summary regardless of which jobs ran or failed
   ci-summary:
     name: CI Complete Summary
     runs-on: ubuntu-latest
