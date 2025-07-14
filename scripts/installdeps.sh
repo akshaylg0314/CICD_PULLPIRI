@@ -19,7 +19,7 @@ common_packages=(
   curl
   libssl-dev
   nodejs
-  npm
+  #npm
 )
 DEBIAN_FRONTEND=noninteractive apt-get install -y "${common_packages[@]}"
 echo "✅ Base packages installed successfully."
@@ -46,12 +46,6 @@ rustup component add rustfmt
 if ! command -v cargo-deny &>/dev/null; then
   echo "🔐 Installing cargo-deny..."
   cargo install cargo-deny
-fi
-
-# Install cargo-nextest
-if ! command -v cargo-nextest &>/dev/null; then
-  echo "🔐 Installing cargo-nextest..."
-  cargo install cargo-nextest
 fi
 
 # Install cargo2junit
@@ -139,21 +133,19 @@ apt-get install -y \
     lsb-release
 
 # Add Docker’s official GPG key
-mkdir -m 0755 -p /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | \
-  gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+# Add Docker’s official GPG key
+sudo mkdir -p /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
 
-# Set up the Docker repository
+# Set up Docker stable repository for Ubuntu Jammy
 echo \
-  "deb [arch=$(dpkg --print-architecture) \
-  signed-by=/etc/apt/keyrings/docker.gpg] \
-  https://download.docker.com/linux/ubuntu \
-  $(lsb_release -cs) stable" | \
-  tee /etc/apt/sources.list.d/docker.list > /dev/null
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
+  https://download.docker.com/linux/ubuntu jammy stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
-# Install Docker engine & CLI
-apt-get update -y
-apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+# Update and install Docker packages
+sudo apt-get update
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
 # Verify installation
 docker --version
