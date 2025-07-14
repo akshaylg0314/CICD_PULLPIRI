@@ -1,6 +1,9 @@
 #!/bin/bash
 set -euo pipefail
 
+# Get the root directory of the project
+PROJECT_ROOT="$(pwd)"
+
 # Create output directory
 mkdir -p dist/licenses
 LOG_FILE="dist/licenses/license_log.txt"
@@ -20,7 +23,7 @@ MANIFESTS=(
     # "src/player/actioncontroller/Cargo.toml"
 )
 
-# Path to the config and template (update based on your project layout)
+# Path to the config and template (relative to project root)
 TEMPLATE="about.hbs"
 CONFIG="about.toml"
 
@@ -42,7 +45,6 @@ for manifest in "${MANIFESTS[@]}"; do
 
     output_path="$PROJECT_ROOT/dist/licenses/${label}_licenses.html"
 
-    # Run cargo-about from inside crate dir, but output to global dist/
     (
       cd "$dir"
       echo "🔧 Working in $(pwd), generating $output_path" | tee -a "$LOG_FILE"
