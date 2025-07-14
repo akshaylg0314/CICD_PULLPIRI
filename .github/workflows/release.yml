@@ -143,12 +143,12 @@ jobs:
           tag: ${{ github.ref }}
 
       # Upload release process to release assets
-      - name: Upload Coding Guidelines to release
+      - name: Upload Release Process to release
         uses: svenstaro/upload-release-action@v2
         id: upload_release_process
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: .github/workflows/release.yaml
+          file: .github/workflows/release.yml
           tag: ${{ github.ref }}
       
       # Step to create a compressed archive of the entire 'doc/' folder
