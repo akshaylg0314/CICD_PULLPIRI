@@ -19,7 +19,6 @@ common_packages=(
   curl
   libssl-dev
   nodejs
-  #npm
 )
 DEBIAN_FRONTEND=noninteractive apt-get install -y "${common_packages[@]}"
 echo "✅ Base packages installed successfully."
@@ -132,7 +131,6 @@ apt-get install -y \
     gnupg \
     lsb-release
 
-# Add Docker’s official GPG key
 # Add Docker’s official GPG key
 sudo mkdir -p /etc/apt/keyrings
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
