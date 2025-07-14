@@ -74,10 +74,20 @@ run_tests() {
   fi
 }
 
-# Start IDL2DDS Docker services if not running
+# --- Docker Service: IDL2DDS ---
 if ! docker ps | grep -qi "idl2dds"; then
   echo "📦 Launching IDL2DDS docker services..." | tee -a "$LOG_FILE"
   [[ ! -d IDL2DDS ]] && git clone https://github.com/MCO-PICCOLO/IDL2DDS -b master
+
+  # Create override to mount cyclonedds.xml cleanly
+  echo "📁 Generating docker-compose.override.yml..." | tee -a "$LOG_FILE"
+  cat <<EOF > IDL2DDS/docker-compose.override.yml
+services:
+  dds-sender:
+    volumes:
+      - ../IDL2DDS/cyclonedds.xml:/app/cyclonedds-sender/cyclonedds.xml
+EOF
+
   pushd IDL2DDS
   docker compose up --build
   popd
