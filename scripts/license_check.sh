@@ -23,8 +23,8 @@ MANIFESTS=(
 )
 
 # Template and config (relative to project root)
-TEMPLATE="$PROJECT_ROOT/about.hbs"
-CONFIG="$PROJECT_ROOT/about.toml"
+TEMPLATE="$PROJECT_ROOT/src/server/about.hbs"
+CONFIG="$PROJECT_ROOT/src/server/about.toml"
 
 echo "Using template: $TEMPLATE" | tee -a "$LOG_FILE"
 echo "Using config: $CONFIG" | tee -a "$LOG_FILE"
