@@ -27,41 +27,6 @@ echo "✅ Base packages installed successfully."
 # ----------------------------------------
 # 🦀 Install rustup, Clippy, Rustfmt, and cargo-deny
 # ----------------------------------------
-# ----------------------------------------
-# 🐳 Install Docker and Docker Compose
-# ----------------------------------------
-
-echo "🐳 Installing Docker CLI and Docker Compose..."
-
-# Install Docker
-apt-get update -y
-apt-get install -y \
-    ca-certificates \
-    curl \
-    gnupg \
-    lsb-release
-
-# Add Docker’s official GPG key
-mkdir -p /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-
-# Set up Docker stable repository for Ubuntu Jammy
-echo \
-  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
-  https://download.docker.com/linux/ubuntu jammy stable" | \
-  tee /etc/apt/sources.list.d/docker.list > /dev/null
-
-# Update and install Docker packages
-apt-get update
-apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-
-# Verify installation
-docker --version
-docker compose version
-
-echo "✅ Docker and Docker Compose installed."
-
-echo "🎉 All dependencies installed and etcd is running!"
 echo "🦀 Installing Rust toolchain..."
 if ! command -v rustup &>/dev/null; then
   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
@@ -152,3 +117,38 @@ if ! etcdctl --endpoints=http://localhost:2379 endpoint health &>/dev/null; then
   exit 1
 fi
 
+# ----------------------------------------
+# 🐳 Install Docker and Docker Compose
+# ----------------------------------------
+
+echo "🐳 Installing Docker CLI and Docker Compose..."
+
+# Install Docker
+apt-get update -y
+apt-get install -y \
+    ca-certificates \
+    curl \
+    gnupg \
+    lsb-release
+
+# Add Docker’s official GPG key
+mkdir -p /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+
+# Set up Docker stable repository for Ubuntu Jammy
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
+  https://download.docker.com/linux/ubuntu jammy stable" | \
+  tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+# Update and install Docker packages
+apt-get update
+apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+# Verify installation
+docker --version
+docker compose version
+
+echo "✅ Docker and Docker Compose installed."
+
+echo "🎉 All dependencies installed and etcd is running!"
