@@ -173,12 +173,12 @@ jobs:
         uses: eclipse-dash/quevee@v1
         with:
           release_url: ${{ steps.latest_release_info.outputs.html_url }}
-          artifacts_testing: ${{ steps.upload_test_report.outputs.browser_download_url }}, ${{ steps.upload_license_report.outputs.browser_download_url }}, ${{ steps.upload_fmt_report.outputs.browser_download_url }} 
           artifacts_readme: ${{ steps.upload_readme.outputs.browser_download_url }} 
           artifacts_coding_guidelines: ${{ steps.upload_coding_guidelines.outputs.browser_download_url }}
           artifacts_release_process: ${{ steps.upload_release_process.outputs.browser_download_url }} 
           artifacts_documentation: ${{ steps.upload_doc.outputs.browser_download_url }}
           artifacts_requirements: ${{ steps.upload_doc.outputs.browser_download_url }}
+          artifacts_testing: ${{ steps.upload_test_report.outputs.browser_download_url }}, ${{ steps.upload_license_report.outputs.browser_download_url }}, ${{ steps.upload_fmt_report.outputs.browser_download_url }}, ${{ steps.upload_deny_report.outputs.browser_download_url }} 
 
       # Upload the final manifest file (produced by quevee) to the GitHub release
       - name: Upload quality manifest to release
