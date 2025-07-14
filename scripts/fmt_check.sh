@@ -3,8 +3,8 @@ set -euo pipefail
 
 LOG_FILE="fmt_results.log"
 TMP_FILE="fmt_output.txt"
-mkdir -p dist/reports
-REPORT_FILE="dist/reports/fmt_summary.md"
+mkdir -p dist/reports/fmt
+REPORT_FILE="dist/reports/fmt/fmt_summary.md"
 rm -f "$LOG_FILE" "$TMP_FILE" "$REPORT_FILE"
 
 echo "Running Cargo fmt..." | tee -a "$LOG_FILE"

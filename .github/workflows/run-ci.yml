@@ -18,8 +18,10 @@ jobs:
 
       - name: Create reports directory
         run: |
-          mkdir -p dist/reports
+          mkdir -p dist/reports/fmt
+          mkdir -p dist/reports/deny
           mkdir -p dist/tests
+          mkdir -p dist/licenses
 
       - name: Run build and parse
         run: ./scripts/buildNparse.sh
@@ -41,14 +43,14 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: deny-report
-          path: dist/reports/deny_summary.md
+          path: dist/reports/deny/deny_summary.md
 
       - name: Upload fmt report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: fmt-report
-          path: dist/reports/fmt_summary.md
+          path: dist/reports/fmt/fmt_summary.md
 
       - name: Upload test report
         if: always()
@@ -56,3 +58,10 @@ jobs:
         with:
           name: test-report
           path: dist/tests/*
+          
+      # - name: Upload license report
+      #   if: always()
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: license-report
+      #     path: dist/licenses/*
