@@ -142,13 +142,29 @@ jobs:
           file: src/coding-rule.md
           tag: ${{ github.ref }}
 
-       # Upload release process to release assets
+      # Upload release process to release assets
       - name: Upload Coding Guidelines to release
         uses: svenstaro/upload-release-action@v2
         id: upload_release_process
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: .github/workflows/release.yaml
+          tag: ${{ github.ref }}
+      
+      # Step to create a compressed archive of the entire 'doc/' folder
+      - name: Archive doc folder
+        shell: bash
+        run: |
+          # Create a tar.gz archive named 'doc-archive.tar.gz' containing everything in 'doc/'
+          tar czf doc-archive.tar.gz doc/
+
+      # Step to upload the archived docs as a release asset to the current Git tag release
+      - name: Upload doc archive to release
+        uses: svenstaro/upload-release-action@v2
+        id: upload_doc
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: doc-archive.tar.gz
           tag: ${{ github.ref }}
 
       # Generate a quality manifest (quality metadata file) using Eclipse Dash QueVee
@@ -161,8 +177,8 @@ jobs:
           artifacts_readme: ${{ steps.upload_readme.outputs.browser_download_url }} 
           artifacts_coding_guidelines: ${{ steps.upload_coding_guidelines.outputs.browser_download_url }}
           artifacts_release_process: ${{ steps.upload_release_process.outputs.browser_download_url }} 
-          artifacts_requirements: # TO DO
-          artifacts_documentation: # TO DO
+          artifacts_documentation: ${{ steps.upload_doc.outputs.browser_download_url }}
+          artifacts_requirements: ${{ steps.upload_doc.outputs.browser_download_url }}
 
       # Upload the final manifest file (produced by quevee) to the GitHub release
       - name: Upload quality manifest to release
