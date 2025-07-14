@@ -98,7 +98,8 @@ jobs:
         id: upload_license_report
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: dist/licenses/*
+          file: dist/reports/license/*
+          file_glob: true
           tag: ${{ github.ref }}
 
       # - name: Upload docs report to release
