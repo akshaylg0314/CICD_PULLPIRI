@@ -79,7 +79,7 @@ if ! docker ps | grep -qi "idl2dds"; then
   echo "📦 Launching IDL2DDS docker services..." | tee -a "$LOG_FILE"
   [[ ! -d IDL2DDS ]] && git clone https://github.com/MCO-PICCOLO/IDL2DDS -b main
   pushd IDL2DDS
-  docker compose up --build -d
+  docker compose up --build
   popd
 else
   echo "🟢 IDL2DDS already running." | tee -a "$LOG_FILE"
