@@ -18,7 +18,8 @@ jobs:
 
       - name: Create reports directory
         run: |
-          mkdir -p dist/reports
+          mkdir -p dist/reports/fmt
+          mkdir -p dist/reports/deny
           mkdir -p dist/tests
           mkdir -p dist/licenses
 
@@ -42,14 +43,14 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: deny-report
-          path: dist/reports/deny_summary.md
+          path: dist/reports/deny/deny_summary.md
 
       - name: Upload fmt report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: fmt-report
-          path: dist/reports/fmt_summary.md
+          path: dist/reports/fmt/fmt_summary.md
 
       - name: Upload test report
         if: always()
