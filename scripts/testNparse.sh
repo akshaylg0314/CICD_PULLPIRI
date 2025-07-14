@@ -77,7 +77,7 @@ run_tests() {
 # Start IDL2DDS Docker services if not running
 if ! docker ps | grep -qi "idl2dds"; then
   echo "📦 Launching IDL2DDS docker services..." | tee -a "$LOG_FILE"
-  [[ ! -d IDL2DDS ]] && git clone https://github.com/MCO-PICCOLO/IDL2DDS -b main
+  [[ ! -d IDL2DDS ]] && git clone https://github.com/MCO-PICCOLO/IDL2DDS -b master
   pushd IDL2DDS
   docker compose up --build
   popd
