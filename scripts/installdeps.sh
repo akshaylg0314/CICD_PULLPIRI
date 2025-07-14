@@ -132,8 +132,8 @@ apt-get install -y \
     lsb-release
 
 # Add Docker’s official GPG key
-sudo mkdir -p /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+mkdir -p /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
 
 # Set up Docker stable repository for Ubuntu Jammy
 echo \
@@ -142,8 +142,8 @@ echo \
   sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
 # Update and install Docker packages
-sudo apt-get update
-sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+apt-get update
+apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
 # Verify installation
 docker --version
