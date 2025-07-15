@@ -59,16 +59,33 @@ run_tests() {
     echo "::error ::❌ Tests failed for $label (cargo test exited non-zero)!" | tee -a "$LOG_FILE"
   fi
 
-  # Extract last summary line
-  local summary_line
-  summary_line=$(grep '"type": "suite"' "$output_json" | tail -1 || true)
-
   local passed=0
   local failed=0
-  if [[ -n "$summary_line" ]]; then
-    passed=$(echo "$summary_line" | jq '.passed // 0')
-    failed=$(echo "$summary_line" | jq '.failed // 0')
-  fi
+
+  # Display individual test results
+  echo "🔎 Test results for $label:" | tee -a "$LOG_FILE"
+  jq -c 'select(.type=="test")' "$output_json" | while read -r line; do
+    name=$(echo "$line" | jq -r '.name')
+    event=$(echo "$line" | jq -r '.event')
+    status_symbol=""
+    case "$event" in
+      ok)
+        passed=$((passed + 1))
+        status_symbol="✅"
+        ;;
+      failed)
+        failed=$((failed + 1))
+        status_symbol="❌"
+        ;;
+      ignored)
+        status_symbol="⚪"
+        ;;
+      *)
+        status_symbol="❓"
+        ;;
+    esac
+    echo "  $status_symbol $name ($event)" | tee -a "$LOG_FILE"
+  done
 
   PASSED_TOTAL=$((PASSED_TOTAL + passed))
   FAILED_TOTAL=$((FAILED_TOTAL + failed))
