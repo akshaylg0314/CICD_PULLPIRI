@@ -19,7 +19,7 @@ common_packages=(
   curl
   libssl-dev
   nodejs
-  #npm
+  jq
 )
 DEBIAN_FRONTEND=noninteractive apt-get install -y "${common_packages[@]}"
 echo "✅ Base packages installed successfully."
