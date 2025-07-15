@@ -111,6 +111,21 @@ cleanup
 [[ -f "$TOOLS_MANIFEST" ]] && run_tests "$TOOLS_MANIFEST" "tools" || echo "::warning ::$TOOLS_MANIFEST missing."
 [[ -f "$AGENT_MANIFEST" ]] && run_tests "$AGENT_MANIFEST" "agent" || echo "::warning ::$AGENT_MANIFEST missing."
 
+echo "📁 Cloning IDL2DDS repository..."
+git clone https://github.com/MCO-PICCOLO/IDL2DDS -b master
+cd IDL2DDS
+
+echo "🐳 Building and starting IDL2DDS container..."
+docker compose up -d --build
+
+echo "⏱️ Waiting for IDL2DDS service health check..."
+
+# === Step 4: filtergateway test (start actioncontroller only now) ===
+start_service "$ACTIONCONTROLLER_MANIFEST" "actioncontroller"
+sleep 3
+[[ -f "$FILTERGATEWAY_MANIFEST" ]] && run_tests "$FILTERGATEWAY_MANIFEST" "filtergateway" || echo "::warning ::$FILTERGATEWAY_MANIFEST missing."
+cleanup  # stop actioncontroller
+
 # === Combine reports ===
 echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" > "$REPORT_FILE"
 echo "<testsuites>" >> "$REPORT_FILE"
