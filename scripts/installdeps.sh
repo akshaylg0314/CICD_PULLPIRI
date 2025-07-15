@@ -114,25 +114,23 @@ if ! docker ps | grep -qi "idl2dds"; then
 
   pushd IDL2DDS
 
-  # Create a minimal config if needed
-  if [[ ! -f cyclonedds.xml ]]; then
-    echo '<CycloneDDS><Domain><Id>0</Id></Domain></CycloneDDS>' > cyclonedds.xml
-  fi
+  # Create minimal CycloneDDS config
+  echo '<CycloneDDS><Domain><Id>0</Id></Domain></CycloneDDS>' > cyclonedds-config.xml
 
-  # Fix mount point: DO NOT mount to an existing directory path
-  # Use a safe file location instead
-  cat <<EOF > docker-compose.override.yml
+  # Generate isolated override config to avoid broken mounts in base compose
+  cat <<EOF > docker-compose.custom.yml
 services:
   dds-sender:
     volumes:
-      - ./cyclonedds.xml:/app/cyclonedds-config.xml
+      - ./cyclonedds-config.xml:/app/cyclonedds-config.xml
     environment:
       CYCLONEDDS_URI: /app/cyclonedds-config.xml
 EOF
 
-  docker compose down -v || true  # Clean up previous volumes if any
-  docker compose up -d --build | tee -a "../$LOG_FILE"
+  docker compose down -v || true  # Clean up previous volumes
+  docker compose -f docker-compose.yml -f docker-compose.custom.yml up -d --build | tee -a "../$LOG_FILE"
   docker compose ps
+
   popd
 else
   echo "🟢 IDL2DDS already running." | tee -a "$LOG_FILE"
