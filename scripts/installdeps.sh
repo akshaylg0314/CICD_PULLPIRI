@@ -10,7 +10,7 @@ apt-get update -y
 echo "📦 Installing common development packages..."
 common_packages=(
   libdbus-1-dev
-  git-all
+  git
   make
   gcc
   protobuf-compiler
