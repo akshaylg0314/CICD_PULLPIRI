@@ -16,12 +16,14 @@ jobs:
       # Checkout the repository
       - uses: actions/checkout@v4
       
+      - name: Start IDL2DDS from script
+        run: ./scripts/idl.sh
+        
       # Install required system-level dependencies from your custom script
       - name: Install dependencies
         run: ./scripts/installdeps.sh
-        
-      - name: Start IDL2DDS from script
-        run: ./scripts/idl.sh
+
+      
 
       # Prepare necessary folders for all output artifacts
       - name: Create reports directory
