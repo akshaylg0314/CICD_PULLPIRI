@@ -48,21 +48,27 @@ trap cleanup EXIT
 run_tests() {
   local manifest="$1"
   local label="$2"
-  local output_json="target/${label}_test_output.json"
-  local report_xml="dist/tests/${label}_results.xml"
+  local output_json="$PROJECT_ROOT/target/${label}_test_output.json"
+  local report_xml="$PROJECT_ROOT/dist/tests/${label}_results.xml"
 
   echo "🧪 Testing $label ($manifest)" | tee -a "$LOG_FILE"
 
-  # Run tests and capture output
-  if sudo -E RUSTC_BOOTSTRAP=1 cargo test --manifest-path="$manifest" -- -Z unstable-options --format json > "$output_json" 2>>"$LOG_FILE"; then
-    echo "✅ Tests passed for $label" | tee -a "$LOG_FILE"
-  else
-    echo "::error ::❌ Tests failed for $label!" | tee -a "$LOG_FILE"
-  fi
+  # Ensure target directory exists and is writable by root and your user
+  mkdir -p "$PROJECT_ROOT/target"
+  chmod 777 "$PROJECT_ROOT/target"
 
+  # Run cargo test under sudo with preserved environment and HOME set to your user
+  # Replace $USER_HOME with your user's home path
+  USER_HOME=$(eval echo "~$SUDO_USER")
+  sudo -E \
+    HOME="$USER_HOME" \
+    CARGO_HOME="$USER_HOME/.cargo" \
+    RUSTC_BOOTSTRAP=1 \
+    cargo test --manifest-path="$manifest" -- -Z unstable-options --format json > "$output_json" 2>>"$LOG_FILE"
+
+  # Check if output JSON exists and parse
   if [[ -f "$output_json" ]]; then
     if command -v jq &>/dev/null; then
-      # Parse test results from JSON
       passed=$(jq -r 'select(.type == "test" and .event == "ok") | .name' "$output_json" | wc -l)
       failed=$(jq -r 'select(.type == "test" and .event == "failed") | .name' "$output_json" | wc -l)
     else
@@ -84,7 +90,16 @@ run_tests() {
   else
     echo "::warning ::No output file $output_json created for $label" | tee -a "$LOG_FILE"
   fi
+
+  # Fail script if tests failed
+  if (( failed > 0 )); then
+    echo "::error ::❌ Tests failed for $label!" | tee -a "$LOG_FILE"
+    exit 1
+  else
+    echo "✅ Tests passed for $label" | tee -a "$LOG_FILE"
+  fi
 }
+
 
 
 # --- Docker Service: IDL2DDS ---
