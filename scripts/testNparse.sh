@@ -5,11 +5,12 @@ LOG_FILE="test_results.log"
 TMP_FILE="test_output.txt"
 REPORT_FILE="dist/tests/test_summary.xml"
 
-# Ensure needed directories exist with sudo
+# Ensure dist/tests and target directories exist and are writable
 sudo mkdir -p dist/tests target
+sudo chown -R "$(whoami)" dist target
 
-# Remove old logs and reports (use sudo to remove if permission issues)
-sudo rm -f "$LOG_FILE" "$TMP_FILE" "$REPORT_FILE"
+# Clean old logs and report
+rm -f "$LOG_FILE" "$TMP_FILE" "$REPORT_FILE"
 
 echo "🚀 Running Cargo Tests..." | tee -a "$LOG_FILE"
 
@@ -20,6 +21,7 @@ FAILED_TOTAL=0
 PASSED_TOTAL=0
 PIDS=()
 
+# Manifest paths
 COMMON_MANIFEST="src/common/Cargo.toml"
 AGENT_MANIFEST="src/agent/Cargo.toml"
 TOOLS_MANIFEST="src/tools/Cargo.toml"
@@ -38,7 +40,7 @@ start_service() {
 cleanup() {
   echo -e "\n🧹 Stopping services..." | tee -a "$LOG_FILE"
   for pid in "${PIDS[@]}"; do
-    if kill -0 "$pid" &>/dev/null; then
+    if sudo kill -0 "$pid" &>/dev/null; then
       sudo kill "$pid" 2>/dev/null || echo "⚠️ Could not kill $pid"
     fi
   done
@@ -54,45 +56,37 @@ run_tests() {
 
   echo "🧪 Testing $label ($manifest)" | tee -a "$LOG_FILE"
 
-  if sudo RUSTC_BOOTSTRAP=1 cargo test --manifest-path="$manifest" -- -Z unstable-options --format json > "$output_json"; then
+  if sudo RUSTC_BOOTSTRAP=1 cargo test --manifest-path="$manifest" -- -Z unstable-options --format json \
+      | sudo tee "$output_json" > /dev/null; then
     echo "✅ Tests completed for $label" | tee -a "$LOG_FILE"
   else
     echo "::error ::❌ Tests failed for $label (cargo test exited non-zero)!" | tee -a "$LOG_FILE"
   fi
 
-  local passed=0
-  local failed=0
-
-  if [[ -f "$output_json" ]]; then
-    if ! command -v jq &>/dev/null; then
-      echo "::warning ::jq not found, skipping detailed test output"
-    else
-      echo "🔎 Test results for $label:" | tee -a "$LOG_FILE"
-      jq -c 'select(.type=="test")' "$output_json" | while read -r line; do
-        name=$(echo "$line" | jq -r '.name')
-        event=$(echo "$line" | jq -r '.event')
-        case "$event" in
-          ok) status_symbol="✅" ;;
-          failed) status_symbol="❌" ;;
-          ignored) status_symbol="⚪" ;;
-          *) status_symbol="❓" ;;
-        esac
-        echo "  $status_symbol $name ($event)" | tee -a "$LOG_FILE"
-      done
-
-      passed=$(jq -c 'select(.type=="test" and .event=="ok")' "$output_json" | wc -l || echo 0)
-      failed=$(jq -c 'select(.type=="test" and .event=="failed")' "$output_json" | wc -l || echo 0)
-    fi
-
-    if command -v cargo2junit &>/dev/null; then
-      cargo2junit < "$output_json" > "$report_xml"
-    else
-      echo "::warning ::cargo2junit not found, skipping XML for $label"
-    fi
-  else
-    echo "::warning ::No test output found for $label, assuming all failed."
-    failed=1
+  if [[ ! -f "$output_json" ]]; then
+    echo "::error ::Output JSON $output_json not found, skipping parsing for $label"
+    return
   fi
+
+  if ! command -v jq &>/dev/null; then
+    echo "::warning ::jq not found, skipping detailed test output"
+  else
+    echo "🔎 Test results for $label:" | tee -a "$LOG_FILE"
+    jq -c 'select(.type=="test")' "$output_json" | while read -r line; do
+      name=$(echo "$line" | jq -r '.name // "unknown"')
+      event=$(echo "$line" | jq -r '.event // "unknown"')
+      case "$event" in
+        ok) status_symbol="✅" ;;
+        failed) status_symbol="❌" ;;
+        ignored) status_symbol="⚪" ;;
+        *) status_symbol="❓" ;;
+      esac
+      echo "  $status_symbol $name ($event)" | tee -a "$LOG_FILE"
+    done
+  fi
+
+  passed=$(jq -c 'select(.type=="test" and .event=="ok")' "$output_json" | wc -l || echo 0)
+  failed=$(jq -c 'select(.type=="test" and .event=="failed")' "$output_json" | wc -l || echo 0)
 
   PASSED_TOTAL=$((PASSED_TOTAL + passed))
   FAILED_TOTAL=$((FAILED_TOTAL + failed))
@@ -102,60 +96,54 @@ run_tests() {
   if [[ "$failed" -gt 0 ]]; then
     echo "::error ::❌ Tests failed for $label!" | tee -a "$LOG_FILE"
   fi
+
+  if command -v cargo2junit &>/dev/null; then
+    sudo cargo2junit < "$output_json" > "$report_xml"
+  else
+    echo "::warning ::cargo2junit not found, skipping XML for $label"
+  fi
 }
-
-
-# Save original directory to come back later
-ORIGINAL_DIR=$(pwd)
 
 # === Step 1: common ===
 [[ -f "$COMMON_MANIFEST" ]] && run_tests "$COMMON_MANIFEST" "common" || echo "::warning ::$COMMON_MANIFEST missing."
 
 # === Step 2: apiserver + dependencies ===
-start_service "$FILTERGATEWAY_MANIFEST" "filtergateway"
-start_service "$AGENT_MANIFEST" "nodeagent"
-
-# Run etcdctl delete with sudo, if needed
+[[ -f "$FILTERGATEWAY_MANIFEST" ]] && start_service "$FILTERGATEWAY_MANIFEST" "filtergateway"
+[[ -f "$AGENT_MANIFEST" ]] && start_service "$AGENT_MANIFEST" "nodeagent"
 sudo etcdctl del "" --prefix
 sleep 3
-
 [[ -f "$APISERVER_MANIFEST" ]] && run_tests "$APISERVER_MANIFEST" "apiserver" || echo "::warning ::$APISERVER_MANIFEST missing."
-
 cleanup
 
 # === Step 3: tools and agent ===
 [[ -f "$TOOLS_MANIFEST" ]] && run_tests "$TOOLS_MANIFEST" "tools" || echo "::warning ::$TOOLS_MANIFEST missing."
 [[ -f "$AGENT_MANIFEST" ]] && run_tests "$AGENT_MANIFEST" "agent" || echo "::warning ::$AGENT_MANIFEST missing."
 
+# === Step 4: IDL2DDS (external container) ===
 echo "📁 Cloning IDL2DDS repository..."
-git clone https://github.com/MCO-PICCOLO/IDL2DDS -b master
-
+sudo git clone https://github.com/MCO-PICCOLO/IDL2DDS -b master
 cd IDL2DDS
 
 echo "🐳 Building and starting IDL2DDS container..."
 sudo docker compose up -d --build
 
-echo "⏱️ Waiting for IDL2DDS service health check..."
+cd "$PROJECT_ROOT"
 
-# Back to project root before further tests
-cd "$ORIGINAL_DIR"
-
-# === Step 4: filtergateway test (start actioncontroller only now) ===
-start_service "$ACTIONCONTROLLER_MANIFEST" "actioncontroller"
+# === Step 5: filtergateway (with actioncontroller) ===
+[[ -f "$ACTIONCONTROLLER_MANIFEST" ]] && start_service "$ACTIONCONTROLLER_MANIFEST" "actioncontroller"
 sleep 3
-
 [[ -f "$FILTERGATEWAY_MANIFEST" ]] && run_tests "$FILTERGATEWAY_MANIFEST" "filtergateway" || echo "::warning ::$FILTERGATEWAY_MANIFEST missing."
+cleanup
 
-cleanup  # stop actioncontroller
-
-# === Combine reports ===
-sudo mkdir -p dist/tests
-echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" | sudo tee "$REPORT_FILE" > /dev/null
-echo "<testsuites>" | sudo tee -a "$REPORT_FILE" > /dev/null
-for xml in dist/tests/*_results.xml; do
-  [[ -f "$xml" ]] && sudo cat "$xml" | sudo tee -a "$REPORT_FILE" > /dev/null
-done
-echo "</testsuites>" | sudo tee -a "$REPORT_FILE" > /dev/null
+# === Combine XML reports ===
+if ls dist/tests/*_results.xml &>/dev/null; then
+  echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" > "$REPORT_FILE"
+  echo "<testsuites>" >> "$REPORT_FILE"
+  cat dist/tests/*_results.xml >> "$REPORT_FILE"
+  echo "</testsuites>" >> "$REPORT_FILE"
+else
+  echo "::warning ::No individual test XML files found; skipping report generation"
+fi
 
 # === Final results ===
 echo "✅ Tests Passed: $PASSED_TOTAL" | tee -a "$LOG_FILE"
