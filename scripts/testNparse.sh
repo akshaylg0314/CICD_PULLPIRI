@@ -80,7 +80,7 @@ if ! docker ps | grep -qi "idl2dds"; then
   [[ ! -d IDL2DDS ]] && git clone https://github.com/MCO-PICCOLO/IDL2DDS -b master
 
   pushd IDL2DDS
-  docker compose up --build
+  docker compose up --build -d
   popd
 else
   echo "🟢 IDL2DDS already running." | tee -a "$LOG_FILE"
