@@ -15,11 +15,10 @@ echo "🔍 Starting license checks..." | tee -a "$LOG_FILE"
 # List of Cargo.toml files to check
 MANIFESTS=(
     "src/server/apiserver/Cargo.toml"
-    # "src/common/Cargo.toml"
+    "src/common/Cargo.toml"
     # "src/agent/Cargo.toml"
     # "src/tools/Cargo.toml"
-    # "src/player/filtergateway/Cargo.toml"
-    # "src/player/actioncontroller/Cargo.toml"
+    "src/player/Cargo.toml"
 )
 
 # Template and config (relative to project root)
