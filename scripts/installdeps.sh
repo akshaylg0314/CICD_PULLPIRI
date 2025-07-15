@@ -22,7 +22,7 @@ common_packages=(
   jq
 )
 DEBIAN_FRONTEND=noninteractive apt-get install -y "${common_packages[@]}"
-echo "✅ Base packages installed successfully."
+echo "✅ Base packages installed successfully"
 
 # ----------------------------------------
 # 🦀 Install rustup, Clippy, Rustfmt, and cargo-deny
