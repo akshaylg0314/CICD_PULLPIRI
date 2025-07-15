@@ -39,8 +39,8 @@ for manifest in "${MANIFESTS[@]}"; do
     echo "📄 Generating license report for $label ($manifest)" | tee -a "$LOG_FILE"
 
     # Determine local config/template or fall back
-    CONFIG="${crate_dir}/about.toml"
-    TEMPLATE="${crate_dir}/about.hbs"
+    CONFIG="${$PROJECT_ROOT/crate_dir}/about.toml"
+    TEMPLATE="${$PROJECT_ROOT/crate_dir}/about.hbs"
 
     [[ -f "$CONFIG" ]] || CONFIG="$DEFAULT_CONFIG"
     [[ -f "$TEMPLATE" ]] || TEMPLATE="$DEFAULT_TEMPLATE"
