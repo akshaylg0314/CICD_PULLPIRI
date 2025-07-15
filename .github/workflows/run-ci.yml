@@ -7,55 +7,18 @@ on:
 
 jobs:
   rust_ci:
+    # Run this job on Ubuntu with the official Rust container
     runs-on: ubuntu-latest
+    container:
+      image: rust:latest  # Ensures a Rust environment is preinstalled
 
     steps:
-      # Checkout your repository
+      # Checkout the repository
       - uses: actions/checkout@v4
-
-      # Clone the IDL2DDS repo separately
-      - name: Clone IDL2DDS repository
-        run: git clone https://github.com/MCO-PICCOLO/IDL2DDS -b master
-
-      # Build the IDL2DDS Docker image
-      - name: Build IDL2DDS Docker image
-        run: |
-          cd IDL2DDS
-          docker build -t idl2dds:ci .
-
-      # Run the IDL2DDS container
-      - name: Run IDL2DDS container
-        run: |
-          if docker ps -a --format '{{.Names}}' | grep -q '^idl2dds$'; then
-            docker rm -f idl2dds
-          fi
-          docker run -d --name idl2dds \
-            -p 12345:12345 \
-            -v ${{ github.workspace }}/IDL2DDS/cyclonedds.xml:/app/cyclonedds-sender/cyclonedds.xml:ro \
-            idl2dds:ci
-
-      # Wait for the container to be ready
-      - name: Wait for IDL2DDS container readiness
-        run: |
-          for i in {1..5}; do
-            if curl -sf http://localhost:12345/health; then
-              echo "IDL2DDS is ready!"
-              break
-            else
-              echo "Waiting for IDL2DDS container... ($i)"
-              sleep 2
-            fi
-          done
-
-      # Setup Rust toolchain
-      - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
 
       # Install required system-level dependencies from your custom script
       - name: Install dependencies
-        run: sudo ./scripts/installdeps.sh
+        run: ./scripts/installdeps.sh
 
       # Prepare necessary folders for all output artifacts
       - name: Create reports directory
@@ -67,23 +30,23 @@ jobs:
 
       # Build the project and parse any outputs (likely from logs)
       - name: Run build and parse
-        run: sudo ./scripts/buildNparse.sh
+        run: ./scripts/buildNparse.sh
 
       # Run all unit/integration tests and convert results to test reports
       - name: Run tests and generate report
-        run: sudo ./scripts/testNparse.sh
+        run: ./scripts/testNparse.sh
 
       # Run Clippy (Rust linter) to catch code issues
       - name: Run lint and generate report
-        run: sudo ./scripts/clippy_check.sh
+        run: ./scripts/clippy_check.sh
 
       # Check formatting with `cargo fmt` and write a summary report
       - name: Run format check and generate report
-        run: sudo ./scripts/fmt_check.sh
+        run: ./scripts/fmt_check.sh
 
       # Run `cargo-deny` to check license, bans, vulnerabilities etc.
       - name: Run cargo-deny checks and generate report
-        run: sudo ./scripts/deny_check.sh
+        run: ./scripts/deny_check.sh
 
       # Upload deny report even if prior steps failed
       - name: Upload deny report

@@ -1,0 +1,44 @@
+name: IDL2DDS Compose Runner
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  run-idl2dds:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout (required even if empty repo)
+        uses: actions/checkout@v4
+
+      - name: Clone IDL2DDS repository
+        run: |
+          git clone https://github.com/MCO-PICCOLO/IDL2DDS -b master
+
+      - name: Set up Docker Compose plugin (if needed)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker-compose-plugin
+
+      - name: Run IDL2DDS using docker compose
+        working-directory: ./IDL2DDS
+        run: |
+          docker compose up -d --build
+
+      - name: Check if IDL2DDS container is healthy
+        run: |
+          docker ps -a
+          docker logs idl2dds || true
+
+      - name: Wait for IDL2DDS container readiness
+        run: |
+          for i in {1..5}; do
+            if curl -sf http://localhost:12345/health; then
+              echo "✅ IDL2DDS is ready!"
+              break
+            else
+              echo "⌛ Waiting for IDL2DDS container... ($i)"
+              sleep 2
+            fi
+          done
