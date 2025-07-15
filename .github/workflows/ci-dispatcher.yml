@@ -36,12 +36,7 @@ jobs:
               - '**/*.md'         # Markdown files (e.g., README, docs)
             yaml:
               - '.github/workflows/*.yml'  # GitHub Actions workflow changes
-
-  # run-idl2dds:
-  #   needs: detect-changes
-  #   if: needs.detect-changes.outputs.rust_changed == 'true'
-  #   uses: ./.github/workflows/idl2dds_runner.yml
-  # Job 2: Run Rust CI only if Rust-related files change
+              
   run-rust-ci:
     needs: detect-changes
     if: needs.detect-changes.outputs.rust_changed == 'true'
