@@ -10,7 +10,7 @@ touch "$LOG_FILE"
 echo "🔍 Starting license checks..." | tee -a "$LOG_FILE"
 
 MANIFESTS=(
-    "src/server/apiserver/Cargo.toml"
+    "src/server/Cargo.toml"
     "src/common/Cargo.toml"
     "src/agent/Cargo.toml"
     "src/tools/Cargo.toml"
