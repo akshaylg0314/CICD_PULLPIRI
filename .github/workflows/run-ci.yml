@@ -7,18 +7,15 @@ on:
 
 jobs:
   rust_ci:
-    # Run this job on Ubuntu with the official Rust container
     runs-on: ubuntu-latest
-    container:
-      image: rust:latest  # Ensures a Rust environment is preinstalled
 
     steps:
-      # Checkout the repository
+      # Checkout your repository
       - uses: actions/checkout@v4
-            # Clone the IDL2DDS repo separately
+
+      # Clone the IDL2DDS repo separately
       - name: Clone IDL2DDS repository
-        run: |
-          git clone https://github.com/MCO-PICCOLO/IDL2DDS -b master
+        run: git clone https://github.com/MCO-PICCOLO/IDL2DDS -b master
 
       # Build the IDL2DDS Docker image
       - name: Build IDL2DDS Docker image
@@ -49,6 +46,12 @@ jobs:
               sleep 5
             fi
           done
+
+      # Setup Rust toolchain
+      - name: Install Rust toolchain
+        uses: actions/setup-rust@v1
+        with:
+          rust-version: stable
 
       # Install required system-level dependencies from your custom script
       - name: Install dependencies
