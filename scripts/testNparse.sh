@@ -74,28 +74,6 @@ run_tests() {
   fi
 }
 
-# --- Docker Service: IDL2DDS ---
-if ! docker ps | grep -qi "idl2dds"; then
-  echo "📦 Launching IDL2DDS docker services..." | tee -a "$LOG_FILE"
-  [[ ! -d IDL2DDS ]] && git clone https://github.com/MCO-PICCOLO/IDL2DDS -b master
-
-  echo "🛠️ Creating docker-compose.override.yml to avoid volume conflict..." | tee -a "$LOG_FILE"
-  cat <<'EOF' > IDL2DDS/docker-compose.override.yml
-services:
-  dds-sender:
-    volumes:
-      - ./cyclonedds.xml:/app/custom/cyclonedds.xml
-    environment:
-      CYCLONEDDS_URI: /app/custom/cyclonedds.xml
-EOF
-
-  pushd IDL2DDS
-  docker compose up --build
-  popd
-else
-  echo "🟢 IDL2DDS already running." | tee -a "$LOG_FILE"
-fi
-
 # === Step 1: common ===
 [[ -f "$COMMON_MANIFEST" ]] && run_tests "$COMMON_MANIFEST" "common" || echo "::warning ::$COMMON_MANIFEST missing."
 

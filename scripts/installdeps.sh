@@ -19,7 +19,7 @@ common_packages=(
   curl
   libssl-dev
   nodejs
-  # npm intentionally commented out
+  #npm
 )
 DEBIAN_FRONTEND=noninteractive apt-get install -y "${common_packages[@]}"
 echo "✅ Base packages installed successfully."
@@ -30,25 +30,30 @@ echo "✅ Base packages installed successfully."
 echo "🦀 Installing Rust toolchain..."
 if ! command -v rustup &>/dev/null; then
   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-  # shellcheck source=/dev/null
   source "$HOME/.cargo/env"
 fi
 
+# Ensure PATH is correctly set
 export PATH="$HOME/.cargo/bin:$PATH"
 
+# Install required Rust components
 echo "🔧 Installing Clippy and Rustfmt..."
-rustup component add clippy rustfmt
+rustup component add clippy
+rustup component add rustfmt
 
+# Install cargo-deny
 if ! command -v cargo-deny &>/dev/null; then
   echo "🔐 Installing cargo-deny..."
   cargo install cargo-deny
 fi
 
+# Install cargo2junit
 if ! command -v cargo2junit &>/dev/null; then
   echo "🔐 Installing cargo2junit..."
   cargo install cargo2junit
 fi
 
+# Show installed versions
 echo "📌 Installed Rust toolchain versions:"
 cargo --version
 cargo clippy --version
@@ -59,6 +64,7 @@ echo "✅ Rust toolchain installed successfully."
 # ----------------------------------------
 # 📦 Install etcd & etcdctl
 # ----------------------------------------
+
 echo "🔧 Installing etcd and etcdctl..."
 ETCD_VER="v3.5.11"
 ETCD_PKG="etcd-${ETCD_VER}-linux-amd64"
@@ -76,6 +82,7 @@ echo "✅ etcd and etcdctl installed."
 # ----------------------------------------
 # 🚀 Start etcd in background
 # ----------------------------------------
+
 echo "🚀 Starting etcd..."
 nohup etcd \
   --name s1 \
@@ -91,6 +98,7 @@ echo "🆔 etcd started with PID $ETCD_PID"
 # ----------------------------------------
 # ⏳ Wait for etcd to become healthy
 # ----------------------------------------
+
 echo "⏳ Waiting for etcd to be healthy..."
 for i in {1..10}; do
   if etcdctl --endpoints=http://localhost:2379 endpoint health &>/dev/null; then
@@ -102,6 +110,7 @@ for i in {1..10}; do
   fi
 done
 
+# Final check before continuing
 if ! etcdctl --endpoints=http://localhost:2379 endpoint health &>/dev/null; then
   echo "::error ::etcd did not become healthy in time!"
   cat etcd.log
@@ -111,8 +120,10 @@ fi
 # ----------------------------------------
 # 🐳 Install Docker and Docker Compose
 # ----------------------------------------
+
 echo "🐳 Installing Docker CLI and Docker Compose..."
 
+# Install Docker
 apt-get update -y
 apt-get install -y \
     ca-certificates \
@@ -120,33 +131,24 @@ apt-get install -y \
     gnupg \
     lsb-release
 
+# Add Docker’s official GPG key
 mkdir -p /etc/apt/keyrings
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
 
+# Set up Docker stable repository for Ubuntu Jammy
 echo \
   "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
   https://download.docker.com/linux/ubuntu jammy stable" | \
   tee /etc/apt/sources.list.d/docker.list > /dev/null
 
-apt-get update -y
+# Update and install Docker packages
+apt-get update
 apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
+# Verify installation
 docker --version
 docker compose version
 
 echo "✅ Docker and Docker Compose installed."
-
-# --- Docker Service: IDL2DDS ---
-if ! docker ps --format '{{.Names}}' | grep -q "^idl2dds$"; then
-  echo "📦 Launching IDL2DDS docker services..."
-  if [[ ! -d IDL2DDS ]]; then
-    git clone https://github.com/MCO-PICCOLO/IDL2DDS -b master
-  fi
-  pushd IDL2DDS
-  docker compose up --build -d
-  popd
-else
-  echo "🟢 IDL2DDS already running."
-fi
 
 echo "🎉 All dependencies installed and etcd is running!"

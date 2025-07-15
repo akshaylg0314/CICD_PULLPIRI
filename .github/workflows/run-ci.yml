@@ -15,6 +15,40 @@ jobs:
     steps:
       # Checkout the repository
       - uses: actions/checkout@v4
+            # Clone the IDL2DDS repo separately
+      - name: Clone IDL2DDS repository
+        run: |
+          git clone https://github.com/MCO-PICCOLO/IDL2DDS -b master
+
+      # Build the IDL2DDS Docker image
+      - name: Build IDL2DDS Docker image
+        run: |
+          cd IDL2DDS
+          docker build -t idl2dds:ci .
+
+      # Run the IDL2DDS container
+      - name: Run IDL2DDS container
+        run: |
+          if docker ps -a --format '{{.Names}}' | grep -q '^idl2dds$'; then
+            docker rm -f idl2dds
+          fi
+          docker run -d --name idl2dds \
+            -p 12345:12345 \
+            -v ${{ github.workspace }}/IDL2DDS/cyclonedds.xml:/app/cyclonedds-sender/cyclonedds.xml:ro \
+            idl2dds:ci
+
+      # Wait for the container to be ready
+      - name: Wait for IDL2DDS container readiness
+        run: |
+          for i in {1..10}; do
+            if curl -sf http://localhost:12345/health; then
+              echo "IDL2DDS is ready!"
+              break
+            else
+              echo "Waiting for IDL2DDS container... ($i)"
+              sleep 5
+            fi
+          done
 
       # Install required system-level dependencies from your custom script
       - name: Install dependencies
