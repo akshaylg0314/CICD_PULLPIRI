@@ -49,9 +49,9 @@ jobs:
 
       # Setup Rust toolchain
       - name: Install Rust toolchain
-        uses: actions/setup-rust@v1
+        uses: actions-rs/toolchain@v1
         with:
-          rust-version: stable
+          toolchain: stable
 
       # Install required system-level dependencies from your custom script
       - name: Install dependencies
