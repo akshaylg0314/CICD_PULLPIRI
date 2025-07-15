@@ -93,6 +93,7 @@ run_tests() {
 # === Step 2: apiserver + dependencies ===
 start_service "$FILTERGATEWAY_MANIFEST" "filtergateway"
 start_service "$AGENT_MANIFEST" "nodeagent"
+etcdctl del "" --prefix
 sleep 3
 [[ -f "$APISERVER_MANIFEST" ]] && run_tests "$APISERVER_MANIFEST" "apiserver" || echo "::warning ::$APISERVER_MANIFEST missing."
 cleanup  # stop filtergateway + agent
