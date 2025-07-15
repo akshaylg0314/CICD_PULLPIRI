@@ -67,7 +67,7 @@ pub async fn handle_bluechi_cmd(
 ) -> Result<()> {
     let conn = Connection::new_system().unwrap();
     let bluechi = conn.with_proxy(DEST, PATH, Duration::from_millis(5000));
-    println!("handle_bluechi_cmd ...\n");
+    print!("handle_bluechi_cmd ...\n");
     match bluechi_cmd.command {
         Command::ControllerReloadAllNodes => {
             let _ = reload_all_nodes(&bluechi);
@@ -107,7 +107,7 @@ pub fn workload_run(
     proxy: &Proxy<'_, &Connection>,
     unit_name: &str,
 ) -> Result<String> {
-    println!("workload_run ...\n");
+    print!("workload_run ...\n");
     let (node,): (Path,) = proxy.method_call(DEST_CONTROLLER, "GetNode", (&node_name,))?;
 
     let node_proxy = conn.with_proxy(DEST, node, Duration::from_millis(5000));
@@ -134,7 +134,7 @@ pub fn workload_run(
 /// * `Ok(String)` - A successful result message listing all reloaded nodes
 /// * `Err(...)` - If any of the D-Bus calls fail
 pub fn reload_all_nodes(proxy: &Proxy<'_, &Connection>) -> Result<String> {
-    println!("Reloading all nodes...\n");
+    print!("Reloading all nodes...\n");
     let (nodes,): (Vec<(String, dbus::Path, String)>,) =
         proxy.method_call(DEST_CONTROLLER, "ListNodes", ())?;
 
@@ -254,7 +254,7 @@ mod tests {
         assert_eq!(Command::UnitReload.to_method_name(), "ReloadUnit");
 
         let unknown_cmd = Command::ControllerReloadAllNodes;
-        assert_eq!(unknown_cmd.to_method_name(), "Unknown");
+        assert_eq!(unknown_cmd.to_method_name(), "ReloadAllNodes");
     }
 
     // ------------------- NEGATIVE TESTS -------------------

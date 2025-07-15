@@ -25,15 +25,15 @@ pub struct ScenarioParameter {
 
 pub struct FilterGatewayManager {
     /// Receiver for scenario information from gRPC
-    rx_grpc: Arc<Mutex<mpsc::Receiver<ScenarioParameter>>>,
+    pub rx_grpc: Arc<Mutex<mpsc::Receiver<ScenarioParameter>>>,
     /// Receiver for DDS data
-    rx_dds: Arc<Mutex<mpsc::Receiver<DdsData>>>,
+    pub rx_dds: Arc<Mutex<mpsc::Receiver<DdsData>>>,
     /// Active filters for scenarios
-    filters: Arc<Mutex<Vec<Filter>>>,
+    pub filters: Arc<Mutex<Vec<Filter>>>,
     /// gRPC sender for action controller
-    sender: Arc<Mutex<FilterGatewaySender>>,
+    pub sender: Arc<Mutex<FilterGatewaySender>>,
     /// Vehicle manager for handling vehicle data
-    vehicle_manager: Arc<Mutex<VehicleManager>>,
+    pub vehicle_manager: Arc<Mutex<VehicleManager>>,
 }
 
 impl FilterGatewayManager {
@@ -75,7 +75,7 @@ impl FilterGatewayManager {
     ///
     /// * `Result<()>` - Success or error result
     pub async fn initialize(&self) -> Result<()> {
-        println!("FilterGatewayManager init");
+        print!("FilterGatewayManager init\n");
         // Initialize vehicle manager
         let etcd_scenario = Self::read_all_scenario_from_etcd().await?;
         for scenario in etcd_scenario {
@@ -267,7 +267,7 @@ impl FilterGatewayManager {
     ///
     /// * `Result<()>` - Success or error result
     pub async fn subscribe_vehicle_data(&self, vehicle_message: DdsData) -> Result<()> {
-        println!("subscribe vehicle data {}", vehicle_message.name);
+        print!("subscribe vehicle data {}\n", vehicle_message.name);
         println!("subscribe vehicle data {}", vehicle_message.value);
         let mut vehicle_manager = self.vehicle_manager.lock().await;
         vehicle_manager
@@ -290,7 +290,7 @@ impl FilterGatewayManager {
     ///
     /// * `Result<()>` - Success or error result
     pub async fn unsubscribe_vehicle_data(&self, vehicle_message: DdsData) -> Result<()> {
-        println!("unsubscribe vehicle data {}", vehicle_message.name);
+        print!("unsubscribe vehicle data {}\n", vehicle_message.name);
         let mut vehicle_manager = self.vehicle_manager.lock().await;
         vehicle_manager
             .unsubscribe_topic(vehicle_message.name)
