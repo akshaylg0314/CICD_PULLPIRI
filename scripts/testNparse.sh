@@ -52,27 +52,40 @@ run_tests() {
   local report_xml="dist/tests/${label}_results.xml"
 
   echo "🧪 Testing $label ($manifest)" | tee -a "$LOG_FILE"
-  if RUSTC_BOOTSTRAP=1 cargo test --manifest-path="$manifest" -- -Z unstable-options --format json | tee "$output_json"; then
+
+  # Run tests and capture output
+  if RUSTC_BOOTSTRAP=1 cargo test --manifest-path="$manifest" -- -Z unstable-options --format json > "$output_json" 2>>"$LOG_FILE"; then
     echo "✅ Tests passed for $label" | tee -a "$LOG_FILE"
   else
     echo "::error ::❌ Tests failed for $label!" | tee -a "$LOG_FILE"
   fi
 
   if [[ -f "$output_json" ]]; then
-    passed=$(grep -oP '\d+ passed' "$output_json" | awk '{sum+=$1} END {print sum}')
-    failed=$(grep -oP '\d+ failed' "$output_json" | awk '{sum+=$1} END {print sum}')
+    if command -v jq &>/dev/null; then
+      # Parse test results from JSON
+      passed=$(jq -r 'select(.type == "test" and .event == "ok") | .name' "$output_json" | wc -l)
+      failed=$(jq -r 'select(.type == "test" and .event == "failed") | .name' "$output_json" | wc -l)
+    else
+      echo "::warning ::jq not found, cannot parse JSON test output."
+      passed=0
+      failed=0
+    fi
+
     PASSED_TOTAL=$((PASSED_TOTAL + passed))
     FAILED_TOTAL=$((FAILED_TOTAL + failed))
+
+    echo "ℹ️ Passed: $passed, Failed: $failed" | tee -a "$LOG_FILE"
 
     if command -v cargo2junit &>/dev/null; then
       cargo2junit < "$output_json" > "$report_xml"
     else
-      echo "::warning ::cargo2junit not found, skipping XML"
+      echo "::warning ::cargo2junit not found, skipping XML for $label"
     fi
   else
-    echo "::warning ::No output for $label"
+    echo "::warning ::No output file $output_json created for $label" | tee -a "$LOG_FILE"
   fi
 }
+
 
 # --- Docker Service: IDL2DDS ---
 if ! docker ps | grep -qi "idl2dds"; then
