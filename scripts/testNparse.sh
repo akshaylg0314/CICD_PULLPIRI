@@ -54,32 +54,45 @@ run_tests() {
 
   echo "🧪 Testing $label ($manifest)" | tee -a "$LOG_FILE"
 
-  # Run tests with sudo (if needed for permission reasons)
   if sudo RUSTC_BOOTSTRAP=1 cargo test --manifest-path="$manifest" -- -Z unstable-options --format json > "$output_json"; then
     echo "✅ Tests completed for $label" | tee -a "$LOG_FILE"
   else
     echo "::error ::❌ Tests failed for $label (cargo test exited non-zero)!" | tee -a "$LOG_FILE"
   fi
 
-  if ! command -v jq &>/dev/null; then
-    echo "::warning ::jq not found, skipping detailed test output"
-  else
-    echo "🔎 Test results for $label:" | tee -a "$LOG_FILE"
-    jq -c 'select(.type=="test")' "$output_json" | while read -r line; do
-      name=$(echo "$line" | jq -r '.name')
-      event=$(echo "$line" | jq -r '.event')
-      case "$event" in
-        ok) status_symbol="✅" ;;
-        failed) status_symbol="❌" ;;
-        ignored) status_symbol="⚪" ;;
-        *) status_symbol="❓" ;;
-      esac
-      echo "  $status_symbol $name ($event)" | tee -a "$LOG_FILE"
-    done
-  fi
+  local passed=0
+  local failed=0
 
-  passed=$(jq -c 'select(.type=="test" and .event=="ok")' "$output_json" | wc -l || echo 0)
-  failed=$(jq -c 'select(.type=="test" and .event=="failed")' "$output_json" | wc -l || echo 0)
+  if [[ -f "$output_json" ]]; then
+    if ! command -v jq &>/dev/null; then
+      echo "::warning ::jq not found, skipping detailed test output"
+    else
+      echo "🔎 Test results for $label:" | tee -a "$LOG_FILE"
+      jq -c 'select(.type=="test")' "$output_json" | while read -r line; do
+        name=$(echo "$line" | jq -r '.name')
+        event=$(echo "$line" | jq -r '.event')
+        case "$event" in
+          ok) status_symbol="✅" ;;
+          failed) status_symbol="❌" ;;
+          ignored) status_symbol="⚪" ;;
+          *) status_symbol="❓" ;;
+        esac
+        echo "  $status_symbol $name ($event)" | tee -a "$LOG_FILE"
+      done
+
+      passed=$(jq -c 'select(.type=="test" and .event=="ok")' "$output_json" | wc -l || echo 0)
+      failed=$(jq -c 'select(.type=="test" and .event=="failed")' "$output_json" | wc -l || echo 0)
+    fi
+
+    if command -v cargo2junit &>/dev/null; then
+      cargo2junit < "$output_json" > "$report_xml"
+    else
+      echo "::warning ::cargo2junit not found, skipping XML for $label"
+    fi
+  else
+    echo "::warning ::No test output found for $label, assuming all failed."
+    failed=1
+  fi
 
   PASSED_TOTAL=$((PASSED_TOTAL + passed))
   FAILED_TOTAL=$((FAILED_TOTAL + failed))
@@ -89,13 +102,8 @@ run_tests() {
   if [[ "$failed" -gt 0 ]]; then
     echo "::error ::❌ Tests failed for $label!" | tee -a "$LOG_FILE"
   fi
-
-  if command -v cargo2junit &>/dev/null; then
-    cargo2junit < "$output_json" > "$report_xml"
-  else
-    echo "::warning ::cargo2junit not found, skipping XML for $label"
-  fi
 }
+
 
 # Save original directory to come back later
 ORIGINAL_DIR=$(pwd)
