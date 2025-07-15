@@ -1,70 +1,81 @@
 #!/bin/bash
-set -euxo pipefail
+set -euo pipefail
 
+# Enable JSON test output even on stable Rust
 export RUSTC_BOOTSTRAP=1
-LOG_FILE="test_results.log"
 
 echo "🛠️ Updating package lists..."
 apt-get update -y
 
 echo "📦 Installing common development packages..."
-apt-get install -y \
-  libdbus-1-dev \
-  git-all \
-  make \
-  gcc \
-  protobuf-compiler \
-  build-essential \
-  pkg-config \
-  curl \
-  libssl-dev \
-  nodejs \
-  ca-certificates \
-  gnupg \
-  lsb-release \
-  unzip \
-  jq \
-  software-properties-common
+common_packages=(
+  libdbus-1-dev
+  git-all
+  make
+  gcc
+  protobuf-compiler
+  build-essential
+  pkg-config
+  curl
+  libssl-dev
+  nodejs
+  # npm intentionally commented out
+)
+DEBIAN_FRONTEND=noninteractive apt-get install -y "${common_packages[@]}"
+echo "✅ Base packages installed successfully."
 
-echo "✅ Base packages installed."
-
-# 🦀 Rust Setup
+# ----------------------------------------
+# 🦀 Install rustup, Clippy, Rustfmt, and cargo-deny
+# ----------------------------------------
+echo "🦀 Installing Rust toolchain..."
 if ! command -v rustup &>/dev/null; then
-  echo "🦀 Installing rustup..."
-  curl https://sh.rustup.rs -sSf | sh -s -- -y
+  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+  # shellcheck source=/dev/null
   source "$HOME/.cargo/env"
 fi
 
 export PATH="$HOME/.cargo/bin:$PATH"
 
-rustup component add clippy
-rustup component add rustfmt
+echo "🔧 Installing Clippy and Rustfmt..."
+rustup component add clippy rustfmt
 
 if ! command -v cargo-deny &>/dev/null; then
+  echo "🔐 Installing cargo-deny..."
   cargo install cargo-deny
 fi
 
 if ! command -v cargo2junit &>/dev/null; then
+  echo "🔐 Installing cargo2junit..."
   cargo install cargo2junit
 fi
 
-echo "📌 Installed:"
+echo "📌 Installed Rust toolchain versions:"
 cargo --version
-cargo fmt --version
 cargo clippy --version
+cargo fmt --version
 cargo deny --version
+echo "✅ Rust toolchain installed successfully."
 
-# etcd
-echo "🔧 Installing etcd..."
+# ----------------------------------------
+# 📦 Install etcd & etcdctl
+# ----------------------------------------
+echo "🔧 Installing etcd and etcdctl..."
 ETCD_VER="v3.5.11"
 ETCD_PKG="etcd-${ETCD_VER}-linux-amd64"
-curl -L "https://github.com/etcd-io/etcd/releases/download/${ETCD_VER}/${ETCD_PKG}.tar.gz" -o etcd.tar.gz
+ETCD_URL="https://github.com/etcd-io/etcd/releases/download/${ETCD_VER}/${ETCD_PKG}.tar.gz"
+
+curl -L "$ETCD_URL" -o etcd.tar.gz
 tar xzvf etcd.tar.gz
 cp "${ETCD_PKG}/etcd" /usr/local/bin/
 cp "${ETCD_PKG}/etcdctl" /usr/local/bin/
 chmod +x /usr/local/bin/etcd /usr/local/bin/etcdctl
 rm -rf etcd.tar.gz "${ETCD_PKG}"
 
+echo "✅ etcd and etcdctl installed."
+
+# ----------------------------------------
+# 🚀 Start etcd in background
+# ----------------------------------------
 echo "🚀 Starting etcd..."
 nohup etcd \
   --name s1 \
@@ -75,12 +86,18 @@ nohup etcd \
   --listen-client-urls http://127.0.0.1:2379 > etcd.log 2>&1 &
 
 ETCD_PID=$!
+echo "🆔 etcd started with PID $ETCD_PID"
+
+# ----------------------------------------
+# ⏳ Wait for etcd to become healthy
+# ----------------------------------------
+echo "⏳ Waiting for etcd to be healthy..."
 for i in {1..10}; do
   if etcdctl --endpoints=http://localhost:2379 endpoint health &>/dev/null; then
-    echo "✅ etcd is healthy"
+    echo "✅ etcd is healthy and ready."
     break
   else
-    echo "⌛ Waiting for etcd to be healthy... ($i)"
+    echo "⌛ Waiting... ($i)"
     sleep 2
   fi
 done
@@ -91,54 +108,45 @@ if ! etcdctl --endpoints=http://localhost:2379 endpoint health &>/dev/null; then
   exit 1
 fi
 
-# 🐳 Docker
-echo "🐳 Installing Docker..."
-mkdir -p /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-echo \
-  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
-  https://download.docker.com/linux/ubuntu jammy stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+# ----------------------------------------
+# 🐳 Install Docker and Docker Compose
+# ----------------------------------------
+echo "🐳 Installing Docker CLI and Docker Compose..."
 
 apt-get update -y
-apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+apt-get install -y \
+    ca-certificates \
+    curl \
+    gnupg \
+    lsb-release
+
+mkdir -p /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
+  https://download.docker.com/linux/ubuntu jammy stable" | \
+  tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+apt-get update -y
+apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
 docker --version
 docker compose version
 
-echo "✅ Docker installed."
+echo "✅ Docker and Docker Compose installed."
 
-# === Docker Service: IDL2DDS ===
-if ! docker ps | grep -qi "idl2dds"; then
-  echo "📦 Launching IDL2DDS..."
-
-  [[ ! -d IDL2DDS ]] && git clone https://github.com/MCO-PICCOLO/IDL2DDS -b master
-
+# --- Docker Service: IDL2DDS ---
+if ! docker ps --format '{{.Names}}' | grep -q "^idl2dds$"; then
+  echo "📦 Launching IDL2DDS docker services..."
+  if [[ ! -d IDL2DDS ]]; then
+    git clone https://github.com/MCO-PICCOLO/IDL2DDS -b master
+  fi
   pushd IDL2DDS
-
-  # Create minimal CycloneDDS config
-  # Create a safe config file
-echo '<CycloneDDS><Domain><Id>0</Id></Domain></CycloneDDS>' > cyclonedds-config.xml
-
-# Create a custom override file that fully resets volumes for the service
-cat > docker-compose.override.yml <<EOF
-version: "3.8"
-
-services:
-  dds-sender:
-    volumes:
-      - ./cyclonedds-config.xml:/app/cyclonedds-config.xml
-    environment:
-      CYCLONEDDS_URI: /app/cyclonedds-config.xml
-EOF
-
-# Use 'docker compose config' to verify volumes merged
-docker compose -f docker-compose.yml -f docker-compose.override.yml config | grep -A 5 volumes
-
-# Now start the service with both compose files:
-docker compose -f docker-compose.yml -f docker-compose.override.yml up -d --build
-
+  docker compose up --build -d
   popd
 else
-  echo "🟢 IDL2DDS already running." | tee -a "$LOG_FILE"
+  echo "🟢 IDL2DDS already running."
 fi
 
-echo "🎉 All setup complete. etcd and DDS services are up."
+echo "🎉 All dependencies installed and etcd is running!"
