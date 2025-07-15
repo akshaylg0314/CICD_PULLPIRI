@@ -79,14 +79,14 @@ if ! docker ps | grep -qi "idl2dds"; then
   echo "📦 Launching IDL2DDS docker services..." | tee -a "$LOG_FILE"
   [[ ! -d IDL2DDS ]] && git clone https://github.com/MCO-PICCOLO/IDL2DDS -b master
 
-  # Create override to mount cyclonedds.xml cleanly
+  echo "🛠️ Creating docker-compose.override.yml to avoid volume conflict..." | tee -a "$LOG_FILE"
   cat <<'EOF' > IDL2DDS/docker-compose.override.yml
 services:
   dds-sender:
     volumes:
-      - ./cyclonedds.xml:/app/cyclonedds.xml
+      - ./cyclonedds.xml:/app/custom/cyclonedds.xml
     environment:
-      CYCLONEDDS_URI: /app/cyclonedds.xml
+      CYCLONEDDS_URI: /app/custom/cyclonedds.xml
 EOF
 
   pushd IDL2DDS
