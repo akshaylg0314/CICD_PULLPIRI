@@ -160,19 +160,20 @@ if ! docker ps | grep -qi "idl2dds"; then
   [[ ! -d IDL2DDS ]] && git clone https://github.com/MCO-PICCOLO/IDL2DDS -b master
 
   # Ensure cyclonedds.xml exists in root of repo for mounting
-  if [[ ! -f IDL2DDS/cyclonedds.xml ]]; then
-    echo "<CycloneDDS><Domain><Id>0</Id></Domain></CycloneDDS>" > IDL2DDS/cyclonedds.xml
-  fi
+ if [[ ! -f IDL2DDS/cyclonedds.xml ]]; then
+  echo "<CycloneDDS><Domain><Id>0</Id></Domain></CycloneDDS>" > IDL2DDS/cyclonedds.xml
+fi
 
-  # Override docker-compose mount
-  cat <<EOF > IDL2DDS/docker-compose.override.yml
+# Safe mount to avoid directory conflict
+cat <<EOF > IDL2DDS/docker-compose.override.yml
 services:
   dds-sender:
     volumes:
-      - ./cyclonedds.xml:/app/custom/cyclonedds.xml
+      - ./cyclonedds.xml:/app/cyclonedds-config.xml
     environment:
-      CYCLONEDDS_URI: /app/custom/cyclonedds.xml
+      CYCLONEDDS_URI: /app/cyclonedds-config.xml
 EOF
+
 
   pushd IDL2DDS
   docker compose up -d --build | tee -a "$LOG_FILE"
