@@ -52,27 +52,40 @@ run_tests() {
   local report_xml="dist/tests/${label}_results.xml"
 
   echo "🧪 Testing $label ($manifest)" | tee -a "$LOG_FILE"
-  if RUSTC_BOOTSTRAP=1 cargo test --manifest-path="$manifest" -- -Z unstable-options --format json | tee "$output_json"; then
-    echo "✅ Tests passed for $label" | tee -a "$LOG_FILE"
+
+  if RUSTC_BOOTSTRAP=1 cargo test --manifest-path="$manifest" -- -Z unstable-options --format json > "$output_json"; then
+    echo "✅ Tests completed for $label" | tee -a "$LOG_FILE"
   else
+    echo "::error ::❌ Tests failed for $label (cargo test exited non-zero)!" | tee -a "$LOG_FILE"
+  fi
+
+  # Extract last summary line
+  local summary_line
+  summary_line=$(grep '"type": "suite"' "$output_json" | tail -1 || true)
+
+  local passed=0
+  local failed=0
+  if [[ -n "$summary_line" ]]; then
+    passed=$(echo "$summary_line" | jq '.passed // 0')
+    failed=$(echo "$summary_line" | jq '.failed // 0')
+  fi
+
+  PASSED_TOTAL=$((PASSED_TOTAL + passed))
+  FAILED_TOTAL=$((FAILED_TOTAL + failed))
+
+  echo "ℹ️ Passed: $passed, Failed: $failed" | tee -a "$LOG_FILE"
+
+  if [[ "$failed" -gt 0 ]]; then
     echo "::error ::❌ Tests failed for $label!" | tee -a "$LOG_FILE"
   fi
 
-  if [[ -f "$output_json" ]]; then
-    passed=$(grep -oP '\d+ passed' "$output_json" | awk '{sum+=$1} END {print sum}')
-    failed=$(grep -oP '\d+ failed' "$output_json" | awk '{sum+=$1} END {print sum}')
-    PASSED_TOTAL=$((PASSED_TOTAL + passed))
-    FAILED_TOTAL=$((FAILED_TOTAL + failed))
-
-    if command -v cargo2junit &>/dev/null; then
-      cargo2junit < "$output_json" > "$report_xml"
-    else
-      echo "::warning ::cargo2junit not found, skipping XML"
-    fi
+  if command -v cargo2junit &>/dev/null; then
+    cargo2junit < "$output_json" > "$report_xml"
   else
-    echo "::warning ::No output for $label"
+    echo "::warning ::cargo2junit not found, skipping XML for $label"
   fi
 }
+
 
 # === Step 1: common ===
 [[ -f "$COMMON_MANIFEST" ]] && run_tests "$COMMON_MANIFEST" "common" || echo "::warning ::$COMMON_MANIFEST missing."
