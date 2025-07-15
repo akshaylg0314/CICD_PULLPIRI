@@ -1,73 +1,85 @@
 name: Release
 
+# Trigger the workflow only when a new tag starting with "v" is pushed (e.g., v1.0.0)
 on:
   push:
     tags:
       - v*
 
+# Prevent duplicate jobs running for same tag; cancel in-progress if newer tag is pushed
 concurrency:
   group: "release-${{ github.head_ref || github.ref }}"
   cancel-in-progress: true
 
 jobs:
+  # Run the main Rust CI checks (tests, formatting, lint, etc.)
   run-rust-ci:
     uses: ./.github/workflows/run-ci.yml
 
+  # Run Rust documentation lint checks
   run-doc-lint:
     uses: ./.github/workflows/run-doc.yml
 
+  # Run YAML syntax and structure validation
   run-yaml-validation:
     uses: ./.github/workflows/run-validate.yml
 
+  # Generate license reports using cargo-about
   run-license-report:
     uses: ./.github/workflows/run-license-check.yml
 
+  # Main job to gather reports and publish artifacts to the GitHub release
   tag_release_artifacts:
+    # Run this job only for version tag pushes
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     name: Collect and upload release artifacts
     runs-on: ubuntu-latest
+
+    # Ensure all upstream jobs complete successfully before running this one
     needs:
       - run-rust-ci
       - run-doc-lint
       - run-yaml-validation
       - run-license-report
+
+    # Grant full write access for upload operations
     permissions: write-all
+
     steps:
+      # Checkout code and all submodules
       - uses: actions/checkout@v4
         with:
           submodules: "recursive"
 
+      # Download deny-check report generated in prior jobs
       - name: Download deny report
         uses: actions/download-artifact@v4
         with:
           name: deny-report
           path: dist/reports/deny/
 
+      # Download formatting (cargo fmt) report
       - name: Download fmt report
         uses: actions/download-artifact@v4
         with:
           name: fmt-report
           path: dist/reports/fmt/
 
+      # Download test reports (Junit XML)
       - name: Download test report
         uses: actions/download-artifact@v4
         with:
           name: test-report
           path: dist/tests/
       
+      # Download license HTML report
       - name: Download license report
         uses: actions/download-artifact@v4
         with:
           name: license-report
           path: dist/licenses/
 
-      # - name: Download docs report
-      #   uses: actions/download-artifact@v4
-      #   with:
-      #     name: docs-report
-      #     path: dist/reports/docs/
-
-      
+      # Upload deny report to the GitHub release assets
       - name: Upload deny report to release
         uses: svenstaro/upload-release-action@v2
         id: upload_deny_report
@@ -76,6 +88,7 @@ jobs:
           file: dist/reports/deny/deny_summary.md
           tag: ${{ github.ref }}
 
+      # Upload formatting (cargo fmt) report
       - name: Upload fmt report to release
         uses: svenstaro/upload-release-action@v2
         id: upload_fmt_report
@@ -84,6 +97,7 @@ jobs:
           file: dist/reports/fmt/fmt_summary.md
           tag: ${{ github.ref }}
 
+      # Upload the combined JUnit test report XML
       - name: Upload test report to release
         uses: svenstaro/upload-release-action@v2
         id: upload_test_report
@@ -93,30 +107,24 @@ jobs:
           file_glob: true
           tag: ${{ github.ref }}
       
+      # Upload license HTML report (e.g., for apiserver)
       - name: Upload license report to release
         uses: svenstaro/upload-release-action@v2
         id: upload_license_report
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: dist/licenses/*
+          file: dist/licenses/*.html
           file_glob: true
           tag: ${{ github.ref }}
 
-      # - name: Upload docs report to release
-      #   uses: svenstaro/upload-release-action@v2
-      #   id: upload_docs_report
-      #   with:
-      #     repo_token: ${{ secrets.GITHUB_TOKEN }}
-      #     file: dist/reports/docs/docs_report.md
-      #     tag: ${{ github.ref }}
-
+      # Fetch details of the latest release (needed for quevee)
       - name: Gets latest created release info
         id: latest_release_info
         uses: joutvhu/get-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
-      # README - we later need the download_url output of the upload step
+      # Upload README file to release assets
       - name: Upload README to release
         uses: svenstaro/upload-release-action@v2
         id: upload_readme
@@ -125,7 +133,7 @@ jobs:
           file: README.md
           tag: ${{ github.ref }}
 
-      # CODING_GUIDELINES - we later need the download_url output of the upload step
+      # Upload coding rules or guidelines to release assets
       - name: Upload Coding Guidelines to release
         uses: svenstaro/upload-release-action@v2
         id: upload_coding_guidelines
@@ -134,18 +142,45 @@ jobs:
           file: src/coding-rule.md
           tag: ${{ github.ref }}
 
+      # Upload release process to release assets
+      - name: Upload Release Process to release
+        uses: svenstaro/upload-release-action@v2
+        id: upload_release_process
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: .github/workflows/release.yml
+          tag: ${{ github.ref }}
+      
+      # Step to create a compressed archive of the entire 'doc/' folder
+      - name: Archive doc folder
+        shell: bash
+        run: |
+          # Create a tar.gz archive named 'doc-archive.tar.gz' containing everything in 'doc/'
+          tar czf doc-archive.tar.gz doc/
+
+      # Step to upload the archived docs as a release asset to the current Git tag release
+      - name: Upload doc archive to release
+        uses: svenstaro/upload-release-action@v2
+        id: upload_doc
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: doc-archive.tar.gz
+          tag: ${{ github.ref }}
+
+      # Generate a quality manifest (quality metadata file) using Eclipse Dash QueVee
       - name: Collect quality artifacts with quevee
         id: quevee_manifest
         uses: eclipse-dash/quevee@v1
         with:
           release_url: ${{ steps.latest_release_info.outputs.html_url }}
-          artifacts_testing: ${{ steps.upload_test_report.outputs.browser_download_url }}
-          artifacts_formatting: ${{ steps.upload_fmt_report.outputs.browser_download_url }}
-          artifacts_readme: ${{ steps.upload_readme.outputs.browser_download_url }}
-          artifacts_licenses: ${{ steps.upload_license_report.outputs.browser_download_url }}
+          artifacts_readme: ${{ steps.upload_readme.outputs.browser_download_url }} 
           artifacts_coding_guidelines: ${{ steps.upload_coding_guidelines.outputs.browser_download_url }}
-          # artifacts_docs: ${{ steps.upload_docs_report.outputs.browser_download_url }}
+          artifacts_release_process: ${{ steps.upload_release_process.outputs.browser_download_url }} 
+          artifacts_documentation: ${{ steps.upload_doc.outputs.browser_download_url }}
+          artifacts_requirements: ${{ steps.upload_doc.outputs.browser_download_url }}
+          artifacts_testing: ${{ steps.upload_test_report.outputs.browser_download_url }}, ${{ steps.upload_license_report.outputs.browser_download_url }}, ${{ steps.upload_fmt_report.outputs.browser_download_url }}, ${{ steps.upload_deny_report.outputs.browser_download_url }} 
 
+      # Upload the final manifest file (produced by quevee) to the GitHub release
       - name: Upload quality manifest to release
         uses: svenstaro/upload-release-action@v2
         with:

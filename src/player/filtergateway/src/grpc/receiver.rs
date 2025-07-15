@@ -67,7 +67,7 @@ impl FilterGatewayReceiver {
 
         self.tx.send(param).await.map_err(|e| {
             eprintln!("Failed to send scenario: {}", e);
-            Error::other("Failed to send scenario")
+            Error::new(std::io::ErrorKind::Other, "Failed to send scenario")
         })?;
 
         Ok(())
