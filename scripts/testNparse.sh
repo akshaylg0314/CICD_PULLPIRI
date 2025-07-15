@@ -57,12 +57,11 @@ run_tests() {
     echo "::error ::❌ Tests failed for $label (cargo test exited non-zero)!" | tee -a "$LOG_FILE"
   fi
 
-  if ! command -v jq &>/dev/null; then
-    echo "::warning ::jq not found, skipping detailed test output"
+ if ! command -v jq &>/dev/null; then
+  echo "::warning ::jq not found, skipping detailed test output"
   else
     echo "🔎 Test results for $label:" | tee -a "$LOG_FILE"
     jq -c 'select(.type=="test")' "$output_json" | while read -r line; do
-      local name event status_symbol
       name=$(echo "$line" | jq -r '.name')
       event=$(echo "$line" | jq -r '.event')
       case "$event" in
@@ -75,10 +74,9 @@ run_tests() {
     done
   fi
 
-  # Use jq to count passed and failed reliably
-  local passed failed
-  passed=$(jq '[.[] | select(.type=="test" and .event=="ok")] | length' "$output_json" || echo 0)
-  failed=$(jq '[.[] | select(.type=="test" and .event=="failed")] | length' "$output_json" || echo 0)
+  passed=$(jq -c 'select(.type=="test" and .event=="ok")' "$output_json" | wc -l || echo 0)
+  failed=$(jq -c 'select(.type=="test" and .event=="failed")' "$output_json" | wc -l || echo 0)
+
 
   PASSED_TOTAL=$((PASSED_TOTAL + passed))
   FAILED_TOTAL=$((FAILED_TOTAL + failed))
