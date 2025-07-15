@@ -3,10 +3,13 @@ set -euo pipefail
 
 LOG_FILE="test_results.log"
 TMP_FILE="test_output.txt"
-mkdir -p dist/tests target
 REPORT_FILE="dist/tests/test_summary.xml"
 
-rm -f "$LOG_FILE" "$TMP_FILE" "$REPORT_FILE"
+# Ensure needed directories exist with sudo
+sudo mkdir -p dist/tests target
+
+# Remove old logs and reports (use sudo to remove if permission issues)
+sudo rm -f "$LOG_FILE" "$TMP_FILE" "$REPORT_FILE"
 
 echo "🚀 Running Cargo Tests..." | tee -a "$LOG_FILE"
 
@@ -28,7 +31,7 @@ start_service() {
   local manifest="$1"
   local name="$2"
   echo "🔄 Starting $name..." | tee -a "$LOG_FILE"
-  cargo run --manifest-path="$manifest" &>> "$LOG_FILE" &
+  sudo cargo run --manifest-path="$manifest" &>> "$LOG_FILE" &
   PIDS+=($!)
 }
 
@@ -36,7 +39,7 @@ cleanup() {
   echo -e "\n🧹 Stopping services..." | tee -a "$LOG_FILE"
   for pid in "${PIDS[@]}"; do
     if kill -0 "$pid" &>/dev/null; then
-      kill "$pid" 2>/dev/null || echo "⚠️ Could not kill $pid"
+      sudo kill "$pid" 2>/dev/null || echo "⚠️ Could not kill $pid"
     fi
   done
   PIDS=()
@@ -51,14 +54,15 @@ run_tests() {
 
   echo "🧪 Testing $label ($manifest)" | tee -a "$LOG_FILE"
 
-  if RUSTC_BOOTSTRAP=1 cargo test --manifest-path="$manifest" -- -Z unstable-options --format json > "$output_json"; then
+  # Run tests with sudo (if needed for permission reasons)
+  if sudo RUSTC_BOOTSTRAP=1 cargo test --manifest-path="$manifest" -- -Z unstable-options --format json > "$output_json"; then
     echo "✅ Tests completed for $label" | tee -a "$LOG_FILE"
   else
     echo "::error ::❌ Tests failed for $label (cargo test exited non-zero)!" | tee -a "$LOG_FILE"
   fi
 
- if ! command -v jq &>/dev/null; then
-  echo "::warning ::jq not found, skipping detailed test output"
+  if ! command -v jq &>/dev/null; then
+    echo "::warning ::jq not found, skipping detailed test output"
   else
     echo "🔎 Test results for $label:" | tee -a "$LOG_FILE"
     jq -c 'select(.type=="test")' "$output_json" | while read -r line; do
@@ -77,7 +81,6 @@ run_tests() {
   passed=$(jq -c 'select(.type=="test" and .event=="ok")' "$output_json" | wc -l || echo 0)
   failed=$(jq -c 'select(.type=="test" and .event=="failed")' "$output_json" | wc -l || echo 0)
 
-
   PASSED_TOTAL=$((PASSED_TOTAL + passed))
   FAILED_TOTAL=$((FAILED_TOTAL + failed))
 
@@ -94,15 +97,22 @@ run_tests() {
   fi
 }
 
+# Save original directory to come back later
+ORIGINAL_DIR=$(pwd)
+
 # === Step 1: common ===
 [[ -f "$COMMON_MANIFEST" ]] && run_tests "$COMMON_MANIFEST" "common" || echo "::warning ::$COMMON_MANIFEST missing."
 
 # === Step 2: apiserver + dependencies ===
 start_service "$FILTERGATEWAY_MANIFEST" "filtergateway"
 start_service "$AGENT_MANIFEST" "nodeagent"
-etcdctl del "" --prefix
+
+# Run etcdctl delete with sudo, if needed
+sudo etcdctl del "" --prefix
 sleep 3
+
 [[ -f "$APISERVER_MANIFEST" ]] && run_tests "$APISERVER_MANIFEST" "apiserver" || echo "::warning ::$APISERVER_MANIFEST missing."
+
 cleanup
 
 # === Step 3: tools and agent ===
@@ -111,26 +121,33 @@ cleanup
 
 echo "📁 Cloning IDL2DDS repository..."
 git clone https://github.com/MCO-PICCOLO/IDL2DDS -b master
+
 cd IDL2DDS
 
 echo "🐳 Building and starting IDL2DDS container..."
-docker compose up -d --build
+sudo docker compose up -d --build
 
 echo "⏱️ Waiting for IDL2DDS service health check..."
+
+# Back to project root before further tests
+cd "$ORIGINAL_DIR"
 
 # === Step 4: filtergateway test (start actioncontroller only now) ===
 start_service "$ACTIONCONTROLLER_MANIFEST" "actioncontroller"
 sleep 3
+
 [[ -f "$FILTERGATEWAY_MANIFEST" ]] && run_tests "$FILTERGATEWAY_MANIFEST" "filtergateway" || echo "::warning ::$FILTERGATEWAY_MANIFEST missing."
+
 cleanup  # stop actioncontroller
 
 # === Combine reports ===
-echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" > "$REPORT_FILE"
-echo "<testsuites>" >> "$REPORT_FILE"
+sudo mkdir -p dist/tests
+echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" | sudo tee "$REPORT_FILE" > /dev/null
+echo "<testsuites>" | sudo tee -a "$REPORT_FILE" > /dev/null
 for xml in dist/tests/*_results.xml; do
-  [[ -f "$xml" ]] && cat "$xml" >> "$REPORT_FILE"
+  [[ -f "$xml" ]] && sudo cat "$xml" | sudo tee -a "$REPORT_FILE" > /dev/null
 done
-echo "</testsuites>" >> "$REPORT_FILE"
+echo "</testsuites>" | sudo tee -a "$REPORT_FILE" > /dev/null
 
 # === Final results ===
 echo "✅ Tests Passed: $PASSED_TOTAL" | tee -a "$LOG_FILE"
