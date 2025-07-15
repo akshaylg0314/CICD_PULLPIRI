@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-# Enable JSON test output even on stable Rus
+# Enable JSON test output even on stable Rust
 export RUSTC_BOOTSTRAP=1
 
 echo "🛠️ Updating package lists..."
@@ -30,11 +30,15 @@ echo "✅ Base packages installed successfully"
 echo "🦀 Installing Rust toolchain..."
 if ! command -v rustup &>/dev/null; then
   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+  echo 'source "$HOME/.cargo/env"' >> ~/.bashrc
+  source "$HOME/.cargo/env"
+else
+  echo "Rustup already installed."
   source "$HOME/.cargo/env"
 fi
 
-# Ensure PATH is correctly set
-export PATH="$HOME/.cargo/bin:$PATH"
+# Ensure PATH includes /usr/local/bin (for etcdctl, etc.)
+export PATH="/usr/local/bin:$PATH"
 
 # Install required Rust components
 echo "🔧 Installing Clippy and Rustfmt..."
@@ -44,13 +48,17 @@ rustup component add rustfmt
 # Install cargo-deny
 if ! command -v cargo-deny &>/dev/null; then
   echo "🔐 Installing cargo-deny..."
-  cargo install cargo-deny
+  cargo install cargo-deny --locked
+else
+  echo "cargo-deny already installed."
 fi
 
 # Install cargo2junit
 if ! command -v cargo2junit &>/dev/null; then
   echo "🔐 Installing cargo2junit..."
-  cargo install cargo2junit
+  cargo install cargo2junit --locked
+else
+  echo "cargo2junit already installed."
 fi
 
 # Show installed versions
@@ -121,34 +129,36 @@ fi
 # 🐳 Install Docker and Docker Compose
 # ----------------------------------------
 
-echo "🐳 Installing Docker CLI and Docker Compose..."
+if ! command -v docker &>/dev/null; then
+  echo "🐳 Installing Docker CLI and Docker Compose..."
 
-# Install Docker
-apt-get update -y
-apt-get install -y \
-    ca-certificates \
-    curl \
-    gnupg \
-    lsb-release
+  apt-get update -y
+  apt-get install -y \
+      ca-certificates \
+      curl \
+      gnupg \
+      lsb-release
 
-# Add Docker’s official GPG key
-mkdir -p /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+  # Add Docker’s official GPG key
+  mkdir -p /etc/apt/keyrings
+  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
 
-# Set up Docker stable repository for Ubuntu Jammy
-echo \
-  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
-  https://download.docker.com/linux/ubuntu jammy stable" | \
-  tee /etc/apt/sources.list.d/docker.list > /dev/null
+  # Set up Docker stable repository for Ubuntu Jammy
+  echo \
+    "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
+    https://download.docker.com/linux/ubuntu jammy stable" | \
+    tee /etc/apt/sources.list.d/docker.list > /dev/null
 
-# Update and install Docker packages
-apt-get update
-apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+  apt-get update
+  apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
-# Verify installation
-docker --version
-docker compose version
+  # Verify installation
+  docker --version
+  docker compose version
 
-echo "✅ Docker and Docker Compose installed."
+  echo "✅ Docker and Docker Compose installed."
+else
+  echo "Docker already installed."
+fi
 
 echo "🎉 All dependencies installed and etcd is running!"
