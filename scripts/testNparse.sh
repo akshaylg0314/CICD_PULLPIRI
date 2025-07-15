@@ -53,20 +53,24 @@ run_tests() {
 
   echo "🧪 Testing $label ($manifest)" | tee -a "$LOG_FILE"
 
-  # Ensure target directory exists and is writable by root and your user
   mkdir -p "$PROJECT_ROOT/target"
   chmod 777 "$PROJECT_ROOT/target"
 
-  # Run cargo test under sudo with preserved environment and HOME set to your user
-  # Replace $USER_HOME with your user's home path
-  USER_HOME=$(eval echo "~$SUDO_USER")
-  sudo -E \
+  # Use fallback for SUDO_USER
+  USER_HOME=$(eval echo "~${SUDO_USER:-$USER}")
+
+  # Run cargo test with sudo and correct env
+  if sudo -E \
     HOME="$USER_HOME" \
     CARGO_HOME="$USER_HOME/.cargo" \
     RUSTC_BOOTSTRAP=1 \
     cargo test --manifest-path="$manifest" -- -Z unstable-options --format json > "$output_json" 2>>"$LOG_FILE"
+  then
+    echo "✅ Tests passed for $label" | tee -a "$LOG_FILE"
+  else
+    echo "::error ::❌ Tests failed for $label!" | tee -a "$LOG_FILE"
+  fi
 
-  # Check if output JSON exists and parse
   if [[ -f "$output_json" ]]; then
     if command -v jq &>/dev/null; then
       passed=$(jq -r 'select(.type == "test" and .event == "ok") | .name' "$output_json" | wc -l)
@@ -91,16 +95,12 @@ run_tests() {
     echo "::warning ::No output file $output_json created for $label" | tee -a "$LOG_FILE"
   fi
 
-  # Fail script if tests failed
+  # Optionally stop script on failure
   if (( failed > 0 )); then
-    echo "::error ::❌ Tests failed for $label!" | tee -a "$LOG_FILE"
+    echo "::error ::Test failures found for $label, stopping." | tee -a "$LOG_FILE"
     exit 1
-  else
-    echo "✅ Tests passed for $label" | tee -a "$LOG_FILE"
   fi
 }
-
-
 
 # --- Docker Service: IDL2DDS ---
 if ! docker ps | grep -qi "idl2dds"; then
