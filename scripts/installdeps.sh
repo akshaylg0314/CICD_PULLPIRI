@@ -119,7 +119,8 @@ if ! docker ps | grep -qi "idl2dds"; then
     echo '<CycloneDDS><Domain><Id>0</Id></Domain></CycloneDDS>' > cyclonedds.xml
   fi
 
-  # Fix mount point (avoid conflict)
+  # Fix mount point: DO NOT mount to an existing directory path
+  # Use a safe file location instead
   cat <<EOF > docker-compose.override.yml
 services:
   dds-sender:
@@ -129,6 +130,7 @@ services:
       CYCLONEDDS_URI: /app/cyclonedds-config.xml
 EOF
 
+  docker compose down -v || true  # Clean up previous volumes if any
   docker compose up -d --build | tee -a "../$LOG_FILE"
   docker compose ps
   popd
