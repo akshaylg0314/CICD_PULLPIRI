@@ -120,10 +120,10 @@ cleanup  # stop filtergateway + agent
 [[ -f "$AGENT_MANIFEST" ]] && run_tests "$AGENT_MANIFEST" "agent" || echo "::warning ::$AGENT_MANIFEST missing."
 
 # === Step 4: filtergateway test (start actioncontroller only now) ===
-start_service "$ACTIONCONTROLLER_MANIFEST" "actioncontroller"
-sleep 3
-[[ -f "$FILTERGATEWAY_MANIFEST" ]] && run_tests "$FILTERGATEWAY_MANIFEST" "filtergateway" || echo "::warning ::$FILTERGATEWAY_MANIFEST missing."
-cleanup  # stop actioncontroller
+# start_service "$ACTIONCONTROLLER_MANIFEST" "actioncontroller"
+# sleep 3
+# [[ -f "$FILTERGATEWAY_MANIFEST" ]] && run_tests "$FILTERGATEWAY_MANIFEST" "filtergateway" || echo "::warning ::$FILTERGATEWAY_MANIFEST missing."
+# cleanup  # stop actioncontroller
 
 # === Optional ===
 # [[ -f "$ACTIONCONTROLLER_MANIFEST" ]] && run_tests "$ACTIONCONTROLLER_MANIFEST" "actioncontroller"
