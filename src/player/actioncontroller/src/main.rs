@@ -4,7 +4,7 @@ mod grpc;
 mod manager;
 mod runtime;
 
-/// Initialize the ActionController component sss
+/// Initialize the ActionController component
 ///
 /// Reads node information from `settings.yaml` file, distinguishes between
 /// Bluechi nodes and NodeAgent nodes, and sets up the initial configuration
