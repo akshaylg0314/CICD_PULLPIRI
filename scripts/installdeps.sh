@@ -5,7 +5,7 @@ set -euo pipefail
 export RUSTC_BOOTSTRAP=1
 
 echo "🛠️ Updating package lists..."
-apt-get update -y
+sudo apt-get update -y
 
 echo "📦 Installing common development packages..."
 common_packages=(
@@ -21,7 +21,7 @@ common_packages=(
   nodejs
   jq
 )
-DEBIAN_FRONTEND=noninteractive apt-get install -y "${common_packages[@]}"
+DEBIAN_FRONTEND=noninteractive sudo apt-get install -y "${common_packages[@]}"
 echo "✅ Base packages installed successfully"
 
 # ----------------------------------------
@@ -30,15 +30,11 @@ echo "✅ Base packages installed successfully"
 echo "🦀 Installing Rust toolchain..."
 if ! command -v rustup &>/dev/null; then
   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-  echo 'source "$HOME/.cargo/env"' >> ~/.bashrc
-  source "$HOME/.cargo/env"
-else
-  echo "Rustup already installed."
   source "$HOME/.cargo/env"
 fi
 
-# Ensure PATH includes /usr/local/bin (for etcdctl, etc.)
-export PATH="/usr/local/bin:$PATH"
+# Ensure PATH is correctly set
+export PATH="$HOME/.cargo/bin:$PATH"
 
 # Install required Rust components
 echo "🔧 Installing Clippy and Rustfmt..."
@@ -48,17 +44,13 @@ rustup component add rustfmt
 # Install cargo-deny
 if ! command -v cargo-deny &>/dev/null; then
   echo "🔐 Installing cargo-deny..."
-  cargo install cargo-deny --locked
-else
-  echo "cargo-deny already installed."
+  cargo install cargo-deny
 fi
 
 # Install cargo2junit
 if ! command -v cargo2junit &>/dev/null; then
   echo "🔐 Installing cargo2junit..."
-  cargo install cargo2junit --locked
-else
-  echo "cargo2junit already installed."
+  cargo install cargo2junit
 fi
 
 # Show installed versions
@@ -80,9 +72,9 @@ ETCD_URL="https://github.com/etcd-io/etcd/releases/download/${ETCD_VER}/${ETCD_P
 
 curl -L "$ETCD_URL" -o etcd.tar.gz
 tar xzvf etcd.tar.gz
-cp "${ETCD_PKG}/etcd" /usr/local/bin/
-cp "${ETCD_PKG}/etcdctl" /usr/local/bin/
-chmod +x /usr/local/bin/etcd /usr/local/bin/etcdctl
+sudo cp "${ETCD_PKG}/etcd" /usr/local/bin/
+sudo cp "${ETCD_PKG}/etcdctl" /usr/local/bin/
+sudo chmod +x /usr/local/bin/etcd /usr/local/bin/etcdctl
 rm -rf etcd.tar.gz "${ETCD_PKG}"
 
 echo "✅ etcd and etcdctl installed."
@@ -129,36 +121,34 @@ fi
 # 🐳 Install Docker and Docker Compose
 # ----------------------------------------
 
-if ! command -v docker &>/dev/null; then
-  echo "🐳 Installing Docker CLI and Docker Compose..."
+echo "🐳 Installing Docker CLI and Docker Compose..."
 
-  apt-get update -y
-  apt-get install -y \
-      ca-certificates \
-      curl \
-      gnupg \
-      lsb-release
+# Install Docker dependencies
+sudo apt-get update -y
+sudo apt-get install -y \
+    ca-certificates \
+    curl \
+    gnupg \
+    lsb-release
 
-  # Add Docker’s official GPG key
-  mkdir -p /etc/apt/keyrings
-  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+# Add Docker’s official GPG key
+sudo mkdir -p /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
 
-  # Set up Docker stable repository for Ubuntu Jammy
-  echo \
-    "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
-    https://download.docker.com/linux/ubuntu jammy stable" | \
-    tee /etc/apt/sources.list.d/docker.list > /dev/null
+# Set up Docker stable repository for Ubuntu Jammy
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
+  https://download.docker.com/linux/ubuntu jammy stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
-  apt-get update
-  apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+# Update and install Docker packages
+sudo apt-get update -y
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
-  # Verify installation
-  docker --version
-  docker compose version
+# Verify installation
+docker --version
+docker compose version
 
-  echo "✅ Docker and Docker Compose installed."
-else
-  echo "Docker already installed."
-fi
+echo "✅ Docker and Docker Compose installed."
 
 echo "🎉 All dependencies installed and etcd is running!"

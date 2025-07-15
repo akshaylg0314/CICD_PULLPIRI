@@ -6,7 +6,6 @@ TMP_FILE="test_output.txt"
 mkdir -p dist/tests target
 REPORT_FILE="dist/tests/test_summary.xml"
 
-# Clean old logs/reports
 rm -f "$LOG_FILE" "$TMP_FILE" "$REPORT_FILE"
 
 echo "🚀 Running Cargo Tests..." | tee -a "$LOG_FILE"
@@ -16,9 +15,8 @@ cd "$PROJECT_ROOT"
 
 FAILED_TOTAL=0
 PASSED_TOTAL=0
-PIDS=()  # Track background service PIDs
+PIDS=()
 
-# Manifest paths
 COMMON_MANIFEST="src/common/Cargo.toml"
 AGENT_MANIFEST="src/agent/Cargo.toml"
 TOOLS_MANIFEST="src/tools/Cargo.toml"
@@ -59,33 +57,28 @@ run_tests() {
     echo "::error ::❌ Tests failed for $label (cargo test exited non-zero)!" | tee -a "$LOG_FILE"
   fi
 
-  local passed=0
-  local failed=0
+  if ! command -v jq &>/dev/null; then
+    echo "::warning ::jq not found, skipping detailed test output"
+  else
+    echo "🔎 Test results for $label:" | tee -a "$LOG_FILE"
+    jq -c 'select(.type=="test")' "$output_json" | while read -r line; do
+      local name event status_symbol
+      name=$(echo "$line" | jq -r '.name')
+      event=$(echo "$line" | jq -r '.event')
+      case "$event" in
+        ok) status_symbol="✅" ;;
+        failed) status_symbol="❌" ;;
+        ignored) status_symbol="⚪" ;;
+        *) status_symbol="❓" ;;
+      esac
+      echo "  $status_symbol $name ($event)" | tee -a "$LOG_FILE"
+    done
+  fi
 
-  # Display individual test results
-  echo "🔎 Test results for $label:" | tee -a "$LOG_FILE"
-  jq -c 'select(.type=="test")' "$output_json" | while read -r line; do
-    name=$(echo "$line" | jq -r '.name')
-    event=$(echo "$line" | jq -r '.event')
-    status_symbol=""
-    case "$event" in
-      ok)
-        passed=$((passed + 1))
-        status_symbol="✅"
-        ;;
-      failed)
-        failed=$((failed + 1))
-        status_symbol="❌"
-        ;;
-      ignored)
-        status_symbol="⚪"
-        ;;
-      *)
-        status_symbol="❓"
-        ;;
-    esac
-    echo "  $status_symbol $name ($event)" | tee -a "$LOG_FILE"
-  done
+  # Use jq to count passed and failed reliably
+  local passed failed
+  passed=$(jq '[.[] | select(.type=="test" and .event=="ok")] | length' "$output_json" || echo 0)
+  failed=$(jq '[.[] | select(.type=="test" and .event=="failed")] | length' "$output_json" || echo 0)
 
   PASSED_TOTAL=$((PASSED_TOTAL + passed))
   FAILED_TOTAL=$((FAILED_TOTAL + failed))
@@ -103,7 +96,6 @@ run_tests() {
   fi
 }
 
-
 # === Step 1: common ===
 [[ -f "$COMMON_MANIFEST" ]] && run_tests "$COMMON_MANIFEST" "common" || echo "::warning ::$COMMON_MANIFEST missing."
 
@@ -113,20 +105,11 @@ start_service "$AGENT_MANIFEST" "nodeagent"
 etcdctl del "" --prefix
 sleep 3
 [[ -f "$APISERVER_MANIFEST" ]] && run_tests "$APISERVER_MANIFEST" "apiserver" || echo "::warning ::$APISERVER_MANIFEST missing."
-cleanup  # stop filtergateway + agent
+cleanup
 
 # === Step 3: tools and agent ===
 [[ -f "$TOOLS_MANIFEST" ]] && run_tests "$TOOLS_MANIFEST" "tools" || echo "::warning ::$TOOLS_MANIFEST missing."
 [[ -f "$AGENT_MANIFEST" ]] && run_tests "$AGENT_MANIFEST" "agent" || echo "::warning ::$AGENT_MANIFEST missing."
-
-# === Step 4: filtergateway test (start actioncontroller only now) ===
-# start_service "$ACTIONCONTROLLER_MANIFEST" "actioncontroller"
-# sleep 3
-# [[ -f "$FILTERGATEWAY_MANIFEST" ]] && run_tests "$FILTERGATEWAY_MANIFEST" "filtergateway" || echo "::warning ::$FILTERGATEWAY_MANIFEST missing."
-# cleanup  # stop actioncontroller
-
-# === Optional ===
-# [[ -f "$ACTIONCONTROLLER_MANIFEST" ]] && run_tests "$ACTIONCONTROLLER_MANIFEST" "actioncontroller"
 
 # === Combine reports ===
 echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" > "$REPORT_FILE"
@@ -140,9 +123,9 @@ echo "</testsuites>" >> "$REPORT_FILE"
 echo "✅ Tests Passed: $PASSED_TOTAL" | tee -a "$LOG_FILE"
 echo "❌ Tests Failed: $FAILED_TOTAL" | tee -a "$LOG_FILE"
 
-[[ "$FAILED_TOTAL" -gt 0 ]] && {
+if [[ "$FAILED_TOTAL" -gt 0 ]]; then
   echo "::error ::Some tests failed!" | tee -a "$LOG_FILE"
   exit 1
-}
+fi
 
 echo "🎉 All tests passed!" | tee -a "$LOG_FILE"
