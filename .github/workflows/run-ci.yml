@@ -55,7 +55,7 @@ jobs:
 
       # Install required system-level dependencies from your custom script
       - name: Install dependencies
-        run: ./scripts/installdeps.sh
+        run: sudo ./scripts/installdeps.sh
 
       # Prepare necessary folders for all output artifacts
       - name: Create reports directory
@@ -67,23 +67,23 @@ jobs:
 
       # Build the project and parse any outputs (likely from logs)
       - name: Run build and parse
-        run: ./scripts/buildNparse.sh
+        run: sudo ./scripts/buildNparse.sh
 
       # Run all unit/integration tests and convert results to test reports
       - name: Run tests and generate report
-        run: ./scripts/testNparse.sh
+        run: sudo ./scripts/testNparse.sh
 
       # Run Clippy (Rust linter) to catch code issues
       - name: Run lint and generate report
-        run: ./scripts/clippy_check.sh
+        run: sudo ./scripts/clippy_check.sh
 
       # Check formatting with `cargo fmt` and write a summary report
       - name: Run format check and generate report
-        run: ./scripts/fmt_check.sh
+        run: sudo ./scripts/fmt_check.sh
 
       # Run `cargo-deny` to check license, bans, vulnerabilities etc.
       - name: Run cargo-deny checks and generate report
-        run: ./scripts/deny_check.sh
+        run: sudo ./scripts/deny_check.sh
 
       # Upload deny report even if prior steps failed
       - name: Upload deny report
