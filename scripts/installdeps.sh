@@ -152,3 +152,31 @@ docker compose version
 echo "✅ Docker and Docker Compose installed."
 
 echo "🎉 All dependencies installed and etcd is running!"
+
+# === Docker Service: IDL2DDS ===
+if ! docker ps | grep -qi "idl2dds"; then
+  echo "📦 Launching IDL2DDS docker services..." | tee -a "$LOG_FILE"
+
+  [[ ! -d IDL2DDS ]] && git clone https://github.com/MCO-PICCOLO/IDL2DDS -b master
+
+  # Ensure cyclonedds.xml exists in root of repo for mounting
+  if [[ ! -f IDL2DDS/cyclonedds.xml ]]; then
+    echo "<CycloneDDS><Domain><Id>0</Id></Domain></CycloneDDS>" > IDL2DDS/cyclonedds.xml
+  fi
+
+  # Override docker-compose mount
+  cat <<EOF > IDL2DDS/docker-compose.override.yml
+services:
+  dds-sender:
+    volumes:
+      - ./cyclonedds.xml:/app/custom/cyclonedds.xml
+    environment:
+      CYCLONEDDS_URI: /app/custom/cyclonedds.xml
+EOF
+
+  pushd IDL2DDS
+  docker compose up -d --build | tee -a "$LOG_FILE"
+  popd
+else
+  echo "🟢 IDL2DDS already running." | tee -a "$LOG_FILE"
+fi
