@@ -115,10 +115,13 @@ if ! docker ps | grep -qi "idl2dds"; then
   pushd IDL2DDS
 
   # Create minimal CycloneDDS config
-  echo '<CycloneDDS><Domain><Id>0</Id></Domain></CycloneDDS>' > cyclonedds-config.xml
+  # Create a safe config file
+echo '<CycloneDDS><Domain><Id>0</Id></Domain></CycloneDDS>' > cyclonedds-config.xml
 
-  # Generate isolated override config to avoid broken mounts in base compose
-  cat <<EOF > docker-compose.custom.yml
+# Create a custom override file that fully resets volumes for the service
+cat > docker-compose.override.yml <<EOF
+version: "3.8"
+
 services:
   dds-sender:
     volumes:
@@ -127,9 +130,11 @@ services:
       CYCLONEDDS_URI: /app/cyclonedds-config.xml
 EOF
 
-  docker compose down -v || true  # Clean up previous volumes
-  docker compose -f docker-compose.yml -f docker-compose.custom.yml up -d --build | tee -a "../$LOG_FILE"
-  docker compose ps
+# Use 'docker compose config' to verify volumes merged
+docker compose -f docker-compose.yml -f docker-compose.override.yml config | grep -A 5 volumes
+
+# Now start the service with both compose files:
+docker compose -f docker-compose.yml -f docker-compose.override.yml up -d --build
 
   popd
 else
