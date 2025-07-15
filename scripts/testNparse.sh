@@ -54,7 +54,7 @@ run_tests() {
   echo "🧪 Testing $label ($manifest)" | tee -a "$LOG_FILE"
 
   # Run tests and capture output
-  if RUSTC_BOOTSTRAP=1 cargo test --manifest-path="$manifest" -- -Z unstable-options --format json > "$output_json" 2>>"$LOG_FILE"; then
+  if sudo -E RUSTC_BOOTSTRAP=1 cargo test --manifest-path="$manifest" -- -Z unstable-options --format json > "$output_json" 2>>"$LOG_FILE"; then
     echo "✅ Tests passed for $label" | tee -a "$LOG_FILE"
   else
     echo "::error ::❌ Tests failed for $label!" | tee -a "$LOG_FILE"
