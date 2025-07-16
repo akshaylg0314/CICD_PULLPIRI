@@ -1,35 +1,39 @@
-# SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
-# SPDX-License-Identifier: Apache-2.0
-
-# ===== Build Stage =====
-FROM rust:1.78.0-slim AS builder
+# ====== Build Stage ======
+FROM ghcr.io/eclipse-pullpiri/pullpiribuilder:latest AS builder
 
 ARG COMPONENT
-ENV COMPONENT=${COMPONENT}
+ARG TARGETARCH
 
 WORKDIR /pullpiri
 
-# Copy shared and component-specific source code
-COPY ./src/common /pullpiri/common
-COPY ./src/${COMPONENT} /pullpiri/${COMPONENT}
+COPY ./src/common ./common
+COPY ./src/${COMPONENT} ./${COMPONENT}
 
-# Install build dependencies and compile
-RUN apt update -y && \
-    apt install -y libdbus-1-dev pkg-config protobuf-compiler libssl-dev && \
-    cd /pullpiri/${COMPONENT} && cargo build --release
+RUN cd ./${COMPONENT} && cargo build --release
 
-# ===== Runtime Stage =====
-FROM alpine:3.20.3
+# ====== Runtime Stage ======
+FROM alpine:3.21.3
 
 ARG COMPONENT
-ENV COMPONENT=${COMPONENT}
+ARG TARGETARCH
+
+# Copy dynamically linked libraries from builder stage into minimal runtime
+COPY --from=builder /dummy /lib
+
+# Additional per-arch setup
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
+        mkdir -p /lib64 && \
+        cp -rf /lib/lib64/ld-linux-x86-64.so.2 /lib64/; \
+    elif [ "$TARGETARCH" = "arm64" ]; then \
+        true; \
+    else \
+        exit 1; \
+    fi
 
 WORKDIR /pullpiri
 
-# Add runtime settings
 COPY ./src/settings.yaml .
 
-# Copy built binary(ies) from builder stage
-COPY --from=builder /pullpiri/${COMPONENT}/target/release /pullpiri/
+COPY --from=builder /pullpiri/${COMPONENT}/target/release/${COMPONENT} .
 
 CMD ["sh"]
