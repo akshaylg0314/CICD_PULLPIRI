@@ -1,28 +1,34 @@
+# SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-ARG COMPONENT
+# ===== Build Stage =====
 FROM rust:1.78.0-slim AS builder
-WORKDIR /piccolo
 
-# Install dependencies
+ARG COMPONENT
+ENV COMPONENT=${COMPONENT}
+
+WORKDIR /pullpiri
+
+# Copy common and component-specific code
+COPY ./src/common /pullpiri/common
+COPY ./src/${COMPONENT} /pullpiri/${COMPONENT}
+
+# Set working dir manually in RUN since ARGs can't be interpolated in WORKDIR
 RUN apt update -y && \
-    apt install -y libdbus-1-dev pkg-config protobuf-compiler libssl-dev
+    apt install -y libdbus-1-dev pkg-config protobuf-compiler libssl-dev && \
+    cd /pullpiri/${COMPONENT} && cargo build --release
 
-# Copy shared and component source
-COPY ./src/common /piccolo/common
-COPY ./src/${COMPONENT} /piccolo/${COMPONENT}
-
-WORKDIR /piccolo/${COMPONENT}
-RUN cargo build --release
-
-# Final runtime image
+# ===== Runtime Stage =====
 FROM alpine:3.20.3
-WORKDIR /piccolo
+
+ARG COMPONENT
+ENV COMPONENT=${COMPONENT}
+
+WORKDIR /pullpiri
 
 COPY ./src/settings.yaml .
 
-# Copy built binaries dynamically
-ARG COMPONENT
-COPY --from=builder /piccolo/${COMPONENT}/target/release /piccolo/
+# Copy all built binaries from release folder to runtime image
+COPY --from=builder /pullpiri/${COMPONENT}/target/release /pullpiri/
 
-CMD ["sh"]
+CMD [ "sh" ]
