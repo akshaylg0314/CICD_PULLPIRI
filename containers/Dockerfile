@@ -9,11 +9,11 @@ ENV COMPONENT=${COMPONENT}
 
 WORKDIR /pullpiri
 
-# Copy common and component-specific code
+# Copy shared and component-specific source code
 COPY ./src/common /pullpiri/common
 COPY ./src/${COMPONENT} /pullpiri/${COMPONENT}
 
-# Set working dir manually in RUN since ARGs can't be interpolated in WORKDIR
+# Install build dependencies and compile
 RUN apt update -y && \
     apt install -y libdbus-1-dev pkg-config protobuf-compiler libssl-dev && \
     cd /pullpiri/${COMPONENT} && cargo build --release
@@ -26,9 +26,10 @@ ENV COMPONENT=${COMPONENT}
 
 WORKDIR /pullpiri
 
+# Add runtime settings
 COPY ./src/settings.yaml .
 
-# Copy all built binaries from release folder to runtime image
+# Copy built binary(ies) from builder stage
 COPY --from=builder /pullpiri/${COMPONENT}/target/release /pullpiri/
 
-CMD [ "sh" ]
+CMD ["sh"]
