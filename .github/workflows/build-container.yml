@@ -87,3 +87,23 @@ jobs:
           push: true
           platforms: linux/arm64
           tags: ${{ env.ContainerRegistry }}/${{ env.IMAGE_NAME }}-player-arm64:${{ github.ref_name }}
+
+       # Build and push pullpiribuilder image
+      - name: Build and push pullpiribuilder image
+        uses: docker/build-push-action@v6
+        with:
+          context: containers/builder
+          file: containers/builder/Dockerfile-pullpiribuilder
+          push: true
+          platforms: linux/amd64
+          tags: ${{ env.ContainerRegistry }}/${{ env.IMAGE_NAME }}-pullpiribuilder:${{ github.ref_name }}
+
+      # Build and push pullpirirelease image (multi-arch)
+      - name: Build and push pullpirirelease image
+        uses: docker/build-push-action@v6
+        with:
+          context: containers/builder
+          file: containers/builder/Dockerfile-pullpirirelease
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ env.ContainerRegistry }}/${{ env.IMAGE_NAME }}-pullpirirelease:${{ github.ref_name }}
