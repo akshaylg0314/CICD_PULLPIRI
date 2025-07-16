@@ -1,10 +1,12 @@
-name: Build and Push Container Image
+name: Build and Push Container Images
 
 on:
   workflow_call:
   workflow_dispatch:
+
 permissions:
   packages: write
+
 env:
   ContainerRegistry: "ghcr.io"
   IMAGE_NAME: ${{ github.repository }}
@@ -13,36 +15,75 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-    - name: Log in to GitHub Container Registry
-      uses: docker/login-action@v3
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Build and push Container image for AMD64
-      uses: docker/build-push-action@v6
-      with:
-        context: .
-        file: containers/Dockerfile
-        push: true
-        platforms: linux/amd64
-        tags: ${{ env.ContainerRegistry }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
+      # Build Server Image
+      - name: Build and push Server image for AMD64
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: containers/Dockerfile-server
+          push: true
+          platforms: linux/amd64
+          tags: ${{ env.ContainerRegistry }}/${{ env.IMAGE_NAME }}-server:${{ github.ref_name }}
 
-    - name: Build and push Container image for ARM64
-      uses: docker/build-push-action@v6
-      with:
-        context: .
-        file: containers/Dockerfile-arm
-        push: true
-        platforms: linux/arm64
-        tags: ${{ env.ContainerRegistry }}/${{ env.IMAGE_NAME }}-arm64:${{ github.ref_name }}
+      - name: Build and push Server image for ARM64
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: containers/Dockerfile-server
+          push: true
+          platforms: linux/arm64
+          tags: ${{ env.ContainerRegistry }}/${{ env.IMAGE_NAME }}-server-arm64:${{ github.ref_name }}
+
+      # Build Agent Image
+      - name: Build and push Agent image for AMD64
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: containers/Dockerfile-agent
+          push: true
+          platforms: linux/amd64
+          tags: ${{ env.ContainerRegistry }}/${{ env.IMAGE_NAME }}-agent:${{ github.ref_name }}
+
+      - name: Build and push Agent image for ARM64
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: containers/Dockerfile-agent
+          push: true
+          platforms: linux/arm64
+          tags: ${{ env.ContainerRegistry }}/${{ env.IMAGE_NAME }}-agent-arm64:${{ github.ref_name }}
+
+      # Build Player Image
+      - name: Build and push Player image for AMD64
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: containers/Dockerfile-player
+          push: true
+          platforms: linux/amd64
+          tags: ${{ env.ContainerRegistry }}/${{ env.IMAGE_NAME }}-player:${{ github.ref_name }}
+
+      - name: Build and push Player image for ARM64
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: containers/Dockerfile-player
+          push: true
+          platforms: linux/arm64
+          tags: ${{ env.ContainerRegistry }}/${{ env.IMAGE_NAME }}-player-arm64:${{ github.ref_name }}
