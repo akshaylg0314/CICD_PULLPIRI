@@ -1,43 +1,51 @@
-# SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
+# SPDX-License-Identifier: Copyright 2024 LG Electronics Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-# ===== Builder Stage =====
-FROM ghcr.io/eclipse-pullpiri/pullpiribuilder:latest AS builder
+############################
+# === Build Stage ===
+############################
+# Use official slim Rust image for minimal build footprint
+FROM rust:1.78.0-slim AS builder
 
-ARG COMPONENT=server
-ARG TARGETARCH
+# Accept a component name via build argument
+ARG COMPONENT
 ENV COMPONENT=${COMPONENT}
 
+# Set working directory inside container
 WORKDIR /pullpiri
 
-# Copy source
-COPY ./src/common ./common
-COPY ./src/${COMPONENT} ./${COMPONENT}
+# Copy shared and component-specific source code into container
+COPY ./src/common /pullpiri/common
+COPY ./src/${COMPONENT} /pullpiri/${COMPONENT}
 
-# Build binaries
-RUN cd ./${COMPONENT} && cargo build --release
+# Install necessary system libraries and build the component
+RUN apt update -y && \
+    apt install -y \
+      libdbus-1-dev \
+      pkg-config \
+      protobuf-compiler \
+      libssl-dev && \
+    cd /pullpiri/${COMPONENT} && \
+    cargo build --release
 
-# ===== Runtime Stage =====
-FROM alpine:3.21.3
+############################
+# === Runtime Stage ===
+############################
+# Use lightweight Alpine image for minimal runtime footprint
+FROM alpine:3.20.3
+
+# Set component environment (reused for directory references)
 ARG COMPONENT
-ARG TARGETARCH
+ENV COMPONENT=${COMPONENT}
 
-# Copy necessary libs
-COPY --from=builder /dummy /lib
-
-# Setup arch-specific ld-linux path
-RUN if [ "$TARGETARCH" = "amd64" ]; then \
-        mkdir -p /lib64 && \
-        cp -rf /lib/lib64/ld-linux-x86-64.so.2 /lib64/; \
-    fi
-
+# Set runtime working directory
 WORKDIR /pullpiri
 
+# Copy shared runtime config (if needed by all components)
 COPY ./src/settings.yaml .
 
-# Copy built binaries
-COPY --from=builder /pullpiri/${COMPONENT}/target/release/apiserver .
-COPY --from=builder /pullpiri/${COMPONENT}/target/release/policymanager .
-COPY --from=builder /pullpiri/${COMPONENT}/target/release/monitoringserver .
+# Copy only the built binaries from the builder stage to reduce image size
+COPY --from=builder /pullpiri/${COMPONENT}/target/release /pullpiri/
 
+# Default shell to interactive mode (can be overridden by CMD/ENTRYPOINT)
 CMD ["sh"]
