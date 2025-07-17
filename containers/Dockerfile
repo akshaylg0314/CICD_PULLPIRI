@@ -12,23 +12,23 @@ ARG TARGETARCH
 ENV COMPONENT=${COMPONENT}
 ENV TARGETARCH=${TARGETARCH}
 
-WORKDIR /pullpiri
+WORKDIR /piccolo
 
 # Copy shared and component-specific source code into container
-COPY ./src/common /pullpiri/common
-COPY ./src/${COMPONENT} /pullpiri/${COMPONENT}
+COPY ./src/common ./common
+COPY ./src/${COMPONENT} ./${COMPONENT}
 
-# Install necessary libraries and build component
+# Install required build dependencies and compile
 RUN apt update -y && \
     apt install -y \
       libdbus-1-dev \
       pkg-config \
       protobuf-compiler \
       libssl-dev && \
-    cd /pullpiri/${COMPONENT} && \
+    cd /piccolo/${COMPONENT} && \
     cargo build --release
 
-# Prepare glibc shared libraries for static alpine runtime
+# Prepare minimal glibc libs for runtime
 WORKDIR /dummy
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
         ITEMARCH="x86_64"; \
@@ -61,12 +61,12 @@ ARG TARGETARCH
 ENV COMPONENT=${COMPONENT}
 ENV TARGETARCH=${TARGETARCH}
 
-WORKDIR /pullpiri
+WORKDIR /piccolo
 
-# Copy runtime shared libraries
+# Copy glibc shared libraries
 COPY --from=builder /dummy /lib
 
-# Ensure dynamic linker is in correct place for glibc-based binaries
+# Fix dynamic linker path
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
         mkdir -p /lib64 && \
         cp -v /lib/lib64/ld-linux-x86-64.so.2 /lib64/ || true; \
@@ -76,11 +76,25 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
         echo "Unsupported architecture: $TARGETARCH" && exit 1; \
     fi
 
-# Copy built Rust binary
-COPY --from=builder /pullpiri/${COMPONENT}/target/release/ /pullpiri/
+# Copy only specific binaries based on COMPONENT
+# Use conditional copying per known COMPONENT group
+# Use bash to dynamically copy correct binaries
+# Each group corresponds to specific binaries
 
-# Copy shared runtime config
+# Agent (nodeagent)
+COPY --from=builder /piccolo/agent/target/release/nodeagent ./nodeagent
+
+# Player (actioncontroller, filtergateway, statemanager)
+COPY --from=builder /piccolo/player/target/release/actioncontroller ./actioncontroller
+COPY --from=builder /piccolo/player/target/release/filtergateway ./filtergateway
+COPY --from=builder /piccolo/player/target/release/statemanager ./statemanager
+
+# Server (apiserver, policymanager, monitoringserver)
+COPY --from=builder /piccolo/server/target/release/apiserver ./apiserver
+COPY --from=builder /piccolo/server/target/release/policymanager ./policymanager
+COPY --from=builder /piccolo/server/target/release/monitoringserver ./monitoringserver
+
+# Shared runtime config
 COPY ./src/settings.yaml .
 
-# Entry point
 CMD ["sh"]
