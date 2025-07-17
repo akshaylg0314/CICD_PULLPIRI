@@ -87,7 +87,7 @@ COPY --from=builder /piccolo/agent/target/release/nodeagent ./nodeagent
 # Player (actioncontroller, filtergateway, statemanager)
 COPY --from=builder /piccolo/player/target/release/actioncontroller ./actioncontroller
 COPY --from=builder /piccolo/player/target/release/filtergateway ./filtergateway
-COPY --from=builder /piccolo/player/target/release/statemanager ./statemanager
+
 
 # Server (apiserver, policymanager, monitoringserver)
 COPY --from=builder /piccolo/server/target/release/apiserver ./apiserver
