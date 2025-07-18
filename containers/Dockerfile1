@@ -1,32 +1,34 @@
 # SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-############################
+#################################
 # === Build Stage ===
-############################
+#################################
 FROM rust:1.85.0-slim AS builder
 
+ARG TARGETARCH
+
+ENV TARGETARCH=${TARGETARCH}
 WORKDIR /piccolo
 
-# Arguments to define build target
-ARG TARGETARCH
-ENV TARGETARCH=${TARGETARCH}
+# Copy shared source and both components
+COPY ./src/common/ /piccolo/common/
+COPY ./src/server/ /piccolo/server/
+COPY ./src/agent/ /piccolo/agent/
 
-# Copy shared and server components
-COPY ./src/common/ /piccolo/common
-COPY ./src/server/ /piccolo/server
-
-# Install build dependencies and build release binaries
+# Install build dependencies
 RUN apt update -y && \
-    apt install -y \
-        libdbus-1-dev \
-        pkg-config \
-        protobuf-compiler \
-        libssl-dev && \
-    cd /piccolo/server && \
-    cargo build --release
+    apt install -y libdbus-1-dev pkg-config protobuf-compiler libssl-dev
 
-# Collect glibc runtime dependencies
+# Build server binaries
+WORKDIR /piccolo/server
+RUN cargo build --release
+
+# Build agent binaries
+WORKDIR /piccolo/agent
+RUN cargo build --release
+
+# Prepare glibc shared libraries
 WORKDIR /dummy
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
         ITEMARCH="x86_64"; \
@@ -38,8 +40,6 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
         mkdir -p /dummy/${ITEMARCH}-linux-gnu/ && \
         cp -v /lib/aarch64-linux-gnu/ld-linux-aarch64.so.1 /dummy/${ITEMARCH}-linux-gnu/ || true && \
         cp -v /lib/ld-linux-aarch64.so.1 /dummy/ || true; \
-    else \
-        echo "Unsupported architecture: $TARGETARCH" && exit 1; \
     fi && \
     for lib in \
         libc.so.6 libcap.so.2 libdbus-1.so.3 libgcc_s.so.1 \
@@ -48,9 +48,9 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
         cp -v /lib/${ITEMARCH}-linux-gnu/$lib* /dummy/${ITEMARCH}-linux-gnu/ || true; \
     done
 
-############################
-# === Runtime Stage (Alpine) ===
-############################
+#################################
+# === Runtime Stage ===
+#################################
 FROM alpine:3.21.3
 
 ARG TARGETARCH
@@ -58,10 +58,10 @@ ENV TARGETARCH=${TARGETARCH}
 
 WORKDIR /piccolo
 
-# Copy glibc shared libs
+# Copy shared libraries
 COPY --from=builder /dummy /lib
 
-# Fix dynamic linker path if needed
+# Setup dynamic linker for glibc
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
         mkdir -p /lib64 && \
         cp -v /lib/lib64/ld-linux-x86-64.so.2 /lib64/ || true; \
@@ -71,13 +71,13 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
         echo "Unsupported architecture: $TARGETARCH" && exit 1; \
     fi
 
-# Copy runtime settings and binaries
-COPY ./src/settings.yaml .
-COPY --from=builder \
-    /piccolo/server/target/release/apiserver \
-    /piccolo/server/target/release/monitoringserver \
-    /piccolo/server/target/release/policymanager \
-    ./
+# Copy built binaries
+COPY --from=builder /piccolo/server/target/release/apiserver /piccolo/
+COPY --from=builder /piccolo/server/target/release/monitoringserver /piccolo/
+COPY --from=builder /piccolo/server/target/release/policymanager /piccolo/
+COPY --from=builder /piccolo/agent/target/release/nodeagent /piccolo/
 
-# Set default command
-CMD ["sh"]
+# Copy runtime settings
+COPY ./src/settings.yaml .
+
+CMD [ "sh" ]
