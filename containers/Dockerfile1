@@ -6,29 +6,27 @@
 ############################
 FROM rust:1.85.0-slim AS builder
 
-ARG COMPONENT
-ARG TARGETARCH
+WORKDIR /piccolo
 
-ENV COMPONENT=${COMPONENT}
+# Arguments to define build target
+ARG TARGETARCH
 ENV TARGETARCH=${TARGETARCH}
 
-WORKDIR /pullpiri
+# Copy shared and server components
+COPY ./src/common/ /piccolo/common
+COPY ./src/server/ /piccolo/server
 
-# Copy shared and component-specific source code into container
-COPY ./src/common /pullpiri/common
-COPY ./src/${COMPONENT} /pullpiri/${COMPONENT}
-
-# Install necessary libraries and build component
+# Install build dependencies and build release binaries
 RUN apt update -y && \
     apt install -y \
-      libdbus-1-dev \
-      pkg-config \
-      protobuf-compiler \
-      libssl-dev && \
-    cd /pullpiri/${COMPONENT} && \
+        libdbus-1-dev \
+        pkg-config \
+        protobuf-compiler \
+        libssl-dev && \
+    cd /piccolo/server && \
     cargo build --release
 
-# Prepare glibc shared libraries for static alpine runtime
+# Collect glibc runtime dependencies
 WORKDIR /dummy
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
         ITEMARCH="x86_64"; \
@@ -51,22 +49,19 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
     done
 
 ############################
-# === Runtime Stage ===
+# === Runtime Stage (Alpine) ===
 ############################
 FROM alpine:3.21.3
 
-ARG COMPONENT
 ARG TARGETARCH
-
-ENV COMPONENT=${COMPONENT}
 ENV TARGETARCH=${TARGETARCH}
 
-WORKDIR /pullpiri
+WORKDIR /piccolo
 
-# Copy runtime shared libraries
+# Copy glibc shared libs
 COPY --from=builder /dummy /lib
 
-# Ensure dynamic linker is in correct place for glibc-based binaries
+# Fix dynamic linker path if needed
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
         mkdir -p /lib64 && \
         cp -v /lib/lib64/ld-linux-x86-64.so.2 /lib64/ || true; \
@@ -76,10 +71,13 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
         echo "Unsupported architecture: $TARGETARCH" && exit 1; \
     fi
 
-# Copy built Rust binary
-COPY --from=builder /pullpiri/${COMPONENT}/target/release/${COMPONENT} /pullpiri/
-
+# Copy runtime settings and binaries
 COPY ./src/settings.yaml .
+COPY --from=builder \
+    /piccolo/server/target/release/apiserver \
+    /piccolo/server/target/release/monitoringserver \
+    /piccolo/server/target/release/policymanager \
+    ./
 
-# Entry point
+# Set default command
 CMD ["sh"]
