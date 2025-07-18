@@ -79,7 +79,6 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
 # Copy built Rust binary
 COPY --from=builder /pullpiri/${COMPONENT}/target/release/${COMPONENT} /pullpiri/
 
-# Copy shared runtime config
 COPY ./src/settings.yaml .
 
 # Entry point
