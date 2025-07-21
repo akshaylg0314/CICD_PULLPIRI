@@ -6,7 +6,7 @@ on:
 
 jobs:
   rust_ci:
-    runs-on: ubuntu-latest  # Use GitHub-hosted runner with Docker installed
+    runs-on: ubuntu-latest
 
     steps:
       # Step 1: Checkout the code
@@ -17,7 +17,7 @@ jobs:
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
           override: true
 
       # Step 3: Install Docker Compose dependencies (if needed)
@@ -41,6 +41,7 @@ jobs:
           mkdir -p dist/reports/deny
           mkdir -p dist/tests
           mkdir -p dist/licenses
+          mkdir -p dist/coverage
 
       # Step 7: Run project build and parse logs
       - name: Build and parse project
@@ -62,9 +63,13 @@ jobs:
       - name: Run cargo-deny checks
         run: ./scripts/deny_check.sh
 
+      # Step 12: Run test coverage script
+      - name: Run test coverage script
+        run: ./scripts/test_coverage.sh
+
       # === Upload All Reports ===
 
-      # Step 12: Upload deny report
+      # Step 13: Upload deny report
       - name: Upload deny report
         if: always()
         uses: actions/upload-artifact@v4
@@ -72,7 +77,7 @@ jobs:
           name: deny-report
           path: dist/reports/deny/deny_summary.md
 
-      # Step 13: Upload format report
+      # Step 14: Upload format report
       - name: Upload fmt report
         if: always()
         uses: actions/upload-artifact@v4
@@ -80,10 +85,27 @@ jobs:
           name: fmt-report
           path: dist/reports/fmt/fmt_summary.md
 
-      # Step 14: Upload all test reports (JUnit-style)
+      # Step 15: Upload all test reports (JUnit-style)
       - name: Upload test reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-report
           path: dist/tests/*
+
+      # Step 16: Upload test coverage reports
+      - name: Upload coverage reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-coverage
+          path: dist/coverage/*
+
+      # # Step 17: Upload to Codecov
+      # - name: Upload to Codecov
+      #   if: env.CODECOV_TOKEN != ''
+      #   uses: codecov/codecov-action@v4.0.1
+      #   with:
+      #     token: ${{ env.CODECOV_TOKEN }}
+      #     slug: ${{ github.repository }}
+      #     files: dist/coverage/lcov.info

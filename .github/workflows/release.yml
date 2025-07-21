@@ -67,6 +67,12 @@ jobs:
         with:
           name: license-report
           path: dist/licenses/
+      
+      - name: Download coverage report
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-report
+          path: dist/coverage/
 
       - name: Upload deny report to release
         uses: svenstaro/upload-release-action@v2
@@ -99,6 +105,15 @@ jobs:
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: dist/licenses/*.html
+          file_glob: true
+          tag: ${{ github.ref }}
+      
+      - name: Upload test coverage report to release
+        uses: svenstaro/upload-release-action@v2
+        id: upload_test_coverage_report
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: dist/coverage/*
           file_glob: true
           tag: ${{ github.ref }}
 
@@ -155,7 +170,7 @@ jobs:
           artifacts_release_process: ${{ steps.upload_release_process.outputs.browser_download_url }}
           artifacts_documentation: ${{ steps.upload_doc.outputs.browser_download_url }}
           artifacts_requirements: ${{ steps.upload_doc.outputs.browser_download_url }}
-          artifacts_testing: ${{ steps.upload_test_report.outputs.browser_download_url }}, ${{ steps.upload_license_report.outputs.browser_download_url }}, ${{ steps.upload_fmt_report.outputs.browser_download_url }}, ${{ steps.upload_deny_report.outputs.browser_download_url }}
+          artifacts_testing: ${{ steps.upload_test_report.outputs.browser_download_url }}, ${{ steps.upload_license_report.outputs.browser_download_url }}, ${{ steps.upload_fmt_report.outputs.browser_download_url }}, ${{ steps.upload_deny_report.outputs.browser_download_url }}, ${{ steps.upload_test_coverage_report.outputs.browser_download_url }}
 
       - name: Upload quality manifest to release
         uses: svenstaro/upload-release-action@v2
