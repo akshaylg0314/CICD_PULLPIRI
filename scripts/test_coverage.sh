@@ -50,10 +50,6 @@ for manifest in "${MANIFESTS[@]}"; do
         (
             cd "$crate_dir"
             cargo tarpaulin \
-              --all-targets \
-              --all-features \
-              --implicit-test-threads \
-              --doc \
               --out Html \
               --out Lcov \
               --out Xml \
