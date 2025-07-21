@@ -3,11 +3,11 @@ set -euo pipefail
 
 # === Path to Cargo.toml for each Rust subproject ===
 COMMON_MANIFEST="src/common/Cargo.toml"
-AGENT_MANIFEST="src/agent/Cargo.toml"
-TOOLS_MANIFEST="src/tools/Cargo.toml"
+# AGENT_MANIFEST="src/agent/Cargo.toml"
+# TOOLS_MANIFEST="src/tools/Cargo.toml"
 APISERVER_MANIFEST="src/server/apiserver/Cargo.toml"
 FILTERGATEWAY_MANIFEST="src/player/filtergateway/Cargo.toml"
-ACTIONCONTROLLER_MANIFEST="src/player/actioncontroller/Cargo.toml"
+# ACTIONCONTROLLER_MANIFEST="src/player/actioncontroller/Cargo.toml"
 
 # === Output setup ===
 PROJECT_ROOT="$(pwd)"
