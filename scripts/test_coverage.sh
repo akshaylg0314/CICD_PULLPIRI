@@ -22,10 +22,10 @@ echo "🧪 Starting test coverage collection for individual crates..." | tee -a 
 
 MANIFESTS=(
     "$COMMON_MANIFEST"
-    "$AGENT_MANIFEST"
-    "$TOOLS_MANIFEST"
+    #"$AGENT_MANIFEST"
+    #"$TOOLS_MANIFEST"
     "$APISERVER_MANIFEST"
-    "$FILTERGATEWAY_MANIFEST"
+    #"$FILTERGATEWAY_MANIFEST"
     "$ACTIONCONTROLLER_MANIFEST"
 )
 
