@@ -45,7 +45,9 @@ export RUSTC_BOOTSTRAP=1
 COMMON_MANIFEST="src/common/Cargo.toml"
 AGENT_MANIFEST="src/agent/Cargo.toml"
 TOOLS_MANIFEST="src/tools/Cargo.toml"
+SERVER_MANIFEST="src/server/Cargo.toml"
 APISERVER_MANIFEST="src/server/apiserver/Cargo.toml"
+PLAYER_MANIFEST="src/player/Cargo.toml"
 FILTERGATEWAY_MANIFEST="src/player/filtergateway/Cargo.toml"
 ACTIONCONTROLLER_MANIFEST="src/player/actioncontroller/Cargo.toml"
 
@@ -59,7 +61,7 @@ if [[ -f "$COMMON_MANIFEST" ]]; then
       --output-dir "$COVERAGE_ROOT/common" \
       2>&1 | tee -a "$LOG_FILE" || true
   )
-  mv "$COVERAGE_ROOT/common/tarpaulin-report.html" "$COVERAGE_ROOT/common/index.html" 2>/dev/null || true
+#   mv "$COVERAGE_ROOT/common/tarpaulin-report.html" "$COVERAGE_ROOT/common/index.html" 2>/dev/null || true
 else
   echo "::warning ::$COMMON_MANIFEST not found. Skipping..." | tee -a "$LOG_FILE"
 fi
@@ -74,7 +76,6 @@ if [[ -f "$TOOLS_MANIFEST" ]]; then
       --output-dir "$COVERAGE_ROOT/tools" \
       2>&1 | tee -a "$LOG_FILE" || true
   )
-  mv "$COVERAGE_ROOT/tools/tarpaulin-report.html" "$COVERAGE_ROOT/tools/index.html" 2>/dev/null || true
 else
   echo "::warning ::$TOOLS_MANIFEST not found. Skipping..." | tee -a "$LOG_FILE"
 fi
@@ -84,19 +85,18 @@ start_service "$FILTERGATEWAY_MANIFEST" "filtergateway"
 start_service "$AGENT_MANIFEST" "nodeagent"
 sleep 3
 
-# === APISERVER ===
-if [[ -f "$APISERVER_MANIFEST" ]]; then
-  echo "📂 Running tarpaulin for apiserver" | tee -a "$LOG_FILE"
-  mkdir -p "$COVERAGE_ROOT/apiserver"
+# === SERVER ===
+if [[ -f "$SERVER_MANIFEST" ]]; then
+  echo "📂 Running tarpaulin for server" | tee -a "$LOG_FILE"
+  mkdir -p "$COVERAGE_ROOT/server"
   (
-    cd "$(dirname "$APISERVER_MANIFEST")"
+    cd "$(dirname "$SERVER_MANIFEST")"
     cargo tarpaulin --out Html --out Lcov --out Xml \
-      --output-dir "$COVERAGE_ROOT/apiserver" \
+      --output-dir "$COVERAGE_ROOT/server" \
       2>&1 | tee -a "$LOG_FILE" || true
   )
-  mv "$COVERAGE_ROOT/apiserver/tarpaulin-report.html" "$COVERAGE_ROOT/apiserver/index.html" 2>/dev/null || true
 else
-  echo "::warning ::$APISERVER_MANIFEST not found. Skipping..." | tee -a "$LOG_FILE"
+  echo "::warning ::$SERVER_MANIFEST not found. Skipping..." | tee -a "$LOG_FILE"
 fi
 
 # Stop background services before next round
@@ -113,23 +113,22 @@ else
   echo "🟢 IDL2DDS already running." | tee -a "$LOG_FILE"
 fi
 
-# === ACTIONCONTROLLER and FILTERGATEWAY ===
+# === Player ===
 start_service "$ACTIONCONTROLLER_MANIFEST" "actioncontroller"
 etcdctl del "" --prefix
 sleep 3
 
-if [[ -f "$FILTERGATEWAY_MANIFEST" ]]; then
-  echo "📂 Running tarpaulin for filtergateway" | tee -a "$LOG_FILE"
-  mkdir -p "$COVERAGE_ROOT/filtergateway"
+if [[ -f "$PLAYER_MANIFEST" ]]; then
+  echo "📂 Running tarpaulin for player" | tee -a "$LOG_FILE"
+  mkdir -p "$COVERAGE_ROOT/player"
   (
-    cd "$(dirname "$FILTERGATEWAY_MANIFEST")"
+    cd "$(dirname "$PLAYER_MANIFEST")"
     cargo tarpaulin --out Html --out Lcov --out Xml \
-      --output-dir "$COVERAGE_ROOT/filtergateway" \
+      --output-dir "$COVERAGE_ROOT/player" \
       2>&1 | tee -a "$LOG_FILE" || true
   )
-  mv "$COVERAGE_ROOT/filtergateway/tarpaulin-report.html" "$COVERAGE_ROOT/filtergateway/index.html" 2>/dev/null || true
 else
-  echo "::warning ::$FILTERGATEWAY_MANIFEST not found. Skipping..." | tee -a "$LOG_FILE"
+  echo "::warning ::$PLAYER_MANIFEST not found. Skipping..." | tee -a "$LOG_FILE"
 fi
 
 cleanup

@@ -100,6 +100,27 @@ jobs:
         with:
           name: coverage-report
           path: dist/coverage/*
+      
+      - name: Upload coverage report (lcov)
+        uses: actions/upload-artifact@v4
+        id: test_coverage_lcov
+        with:
+          name: code-coverage-lcov
+          path: dist/coverage/server/lcov.info
+
+      - name: Upload coverage report (xml)
+        uses: actions/upload-artifact@v4
+        id: test_coverage_xml
+        with:
+          name: code-coverage-xml
+          path: dist/coverage/server/cobertura.xml
+    
+      - name: Upload coverage report (html)
+        uses: actions/upload-artifact@v4
+        id: test_coverage_html
+        with:
+          name: code-coverage-html
+          path: dist/coverage/sever/tarpaulin-report.html
 
       # # Step 17: Upload to Codecov
       # - name: Upload to Codecov
