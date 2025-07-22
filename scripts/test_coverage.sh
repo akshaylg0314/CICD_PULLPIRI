@@ -58,7 +58,7 @@ if [[ -f "$COMMON_MANIFEST" ]]; then
     cd "$(dirname "$COMMON_MANIFEST")"
     cargo tarpaulin --out Html --out Lcov --out Xml \
       --output-dir "$COVERAGE_ROOT/common" \
-      2>&1 | tee -a "$LOG_FILE"
+      2>&1 | tee -a "$LOG_FILE" || true
   )
   mv "$COVERAGE_ROOT/common/tarpaulin-report.html" "$COVERAGE_ROOT/common/index.html" 2>/dev/null || true
 else
@@ -73,7 +73,7 @@ if [[ -f "$TOOLS_MANIFEST" ]]; then
     cd "$(dirname "$TOOLS_MANIFEST")"
     cargo tarpaulin --out Html --out Lcov --out Xml \
       --output-dir "$COVERAGE_ROOT/tools" \
-      2>&1 | tee -a "$LOG_FILE"
+      2>&1 | tee -a "$LOG_FILE" || true
   )
   mv "$COVERAGE_ROOT/tools/tarpaulin-report.html" "$COVERAGE_ROOT/tools/index.html" 2>/dev/null || true
 else
@@ -93,7 +93,7 @@ if [[ -f "$APISERVER_MANIFEST" ]]; then
     cd "$(dirname "$APISERVER_MANIFEST")"
     cargo tarpaulin --out Html --out Lcov --out Xml \
       --output-dir "$COVERAGE_ROOT/apiserver" \
-      2>&1 | tee -a "$LOG_FILE"
+      2>&1 | tee -a "$LOG_FILE" || true
   )
   mv "$COVERAGE_ROOT/apiserver/tarpaulin-report.html" "$COVERAGE_ROOT/apiserver/index.html" 2>/dev/null || true
 else
@@ -125,7 +125,7 @@ if [[ -f "$FILTERGATEWAY_MANIFEST" ]]; then
     cd "$(dirname "$FILTERGATEWAY_MANIFEST")"
     cargo tarpaulin --out Html --out Lcov --out Xml \
       --output-dir "$COVERAGE_ROOT/filtergateway" \
-      2>&1 | tee -a "$LOG_FILE"
+      2>&1 | tee -a "$LOG_FILE" || true
   )
   mv "$COVERAGE_ROOT/filtergateway/tarpaulin-report.html" "$COVERAGE_ROOT/filtergateway/index.html" 2>/dev/null || true
 else
