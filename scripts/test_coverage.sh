@@ -30,7 +30,6 @@ cleanup() {
   done
   PIDS=()
 }
-trap cleanup EXIT
 
 # === Ensure cargo-tarpaulin is installed ===
 if ! command -v cargo-tarpaulin &>/dev/null; then
