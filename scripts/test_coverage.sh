@@ -25,13 +25,12 @@ cleanup() {
   echo -e "\n🧹 Stopping services..." | tee -a "$LOG_FILE"
   for pid in "${PIDS[@]}"; do
     if kill -0 "$pid" &>/dev/null; then
-      if ! kill "$pid" 2>/dev/null; then
-        echo "⚠️ Could not kill PID $pid" | tee -a "$LOG_FILE"
-      fi
+      kill "$pid" 2>/dev/null || echo "⚠️ Could not kill $pid"
     fi
   done
-  PIDS=()
+  PIDS=()  # Reset PID list
 }
+trap cleanup EXIT  # Ensure cleanup is called on exit
 
 # === Ensure cargo-tarpaulin is installed ===
 if ! command -v cargo-tarpaulin &>/dev/null; then
