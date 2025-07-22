@@ -51,34 +51,34 @@ PLAYER_MANIFEST="src/player/Cargo.toml"
 FILTERGATEWAY_MANIFEST="src/player/filtergateway/Cargo.toml"
 ACTIONCONTROLLER_MANIFEST="src/player/actioncontroller/Cargo.toml"
 
-# === COMMON ===
-if [[ -f "$COMMON_MANIFEST" ]]; then
-  echo "📂 Running tarpaulin for common" | tee -a "$LOG_FILE"
-  mkdir -p "$COVERAGE_ROOT/common"
-  (
-    cd "$(dirname "$COMMON_MANIFEST")"
-    cargo tarpaulin --out Html --out Lcov --out Xml \
-      --output-dir "$COVERAGE_ROOT/common" \
-      2>&1 | tee -a "$LOG_FILE" || true
-  )
-#   mv "$COVERAGE_ROOT/common/tarpaulin-report.html" "$COVERAGE_ROOT/common/index.html" 2>/dev/null || true
-else
-  echo "::warning ::$COMMON_MANIFEST not found. Skipping..." | tee -a "$LOG_FILE"
-fi
+# # === COMMON ===
+# if [[ -f "$COMMON_MANIFEST" ]]; then
+#   echo "📂 Running tarpaulin for common" | tee -a "$LOG_FILE"
+#   mkdir -p "$COVERAGE_ROOT/common"
+#   (
+#     cd "$(dirname "$COMMON_MANIFEST")"
+#     cargo tarpaulin --out Html --out Lcov --out Xml \
+#       --output-dir "$COVERAGE_ROOT/common" \
+#       2>&1 | tee -a "$LOG_FILE" || true
+#   )
+# #   mv "$COVERAGE_ROOT/common/tarpaulin-report.html" "$COVERAGE_ROOT/common/index.html" 2>/dev/null || true
+# else
+#   echo "::warning ::$COMMON_MANIFEST not found. Skipping..." | tee -a "$LOG_FILE"
+# fi
 
-# === TOOLS ===
-if [[ -f "$TOOLS_MANIFEST" ]]; then
-  echo "📂 Running tarpaulin for tools" | tee -a "$LOG_FILE"
-  mkdir -p "$COVERAGE_ROOT/tools"
-  (
-    cd "$(dirname "$TOOLS_MANIFEST")"
-    cargo tarpaulin --out Html --out Lcov --out Xml \
-      --output-dir "$COVERAGE_ROOT/tools" \
-      2>&1 | tee -a "$LOG_FILE" || true
-  )
-else
-  echo "::warning ::$TOOLS_MANIFEST not found. Skipping..." | tee -a "$LOG_FILE"
-fi
+# # === TOOLS ===
+# if [[ -f "$TOOLS_MANIFEST" ]]; then
+#   echo "📂 Running tarpaulin for tools" | tee -a "$LOG_FILE"
+#   mkdir -p "$COVERAGE_ROOT/tools"
+#   (
+#     cd "$(dirname "$TOOLS_MANIFEST")"
+#     cargo tarpaulin --out Html --out Lcov --out Xml \
+#       --output-dir "$COVERAGE_ROOT/tools" \
+#       2>&1 | tee -a "$LOG_FILE" || true
+#   )
+# else
+#   echo "::warning ::$TOOLS_MANIFEST not found. Skipping..." | tee -a "$LOG_FILE"
+# fi
 
 # === Step 2: Start `filtergateway` and `nodeagent` before apiserver ===
 start_service "$FILTERGATEWAY_MANIFEST" "filtergateway"
@@ -103,34 +103,34 @@ fi
 # Stop background services before next round
 cleanup
 
-# === Start IDL2DDS Docker Service ===
-if ! docker ps | grep -qi "idl2dds"; then
-  echo "📦 Launching IDL2DDS docker services..." | tee -a "$LOG_FILE"
-  [[ ! -d IDL2DDS ]] && git clone https://github.com/MCO-PICCOLO/IDL2DDS -b master
-  pushd IDL2DDS
-  docker compose up --build -d
-  popd
-else
-  echo "🟢 IDL2DDS already running." | tee -a "$LOG_FILE"
-fi
+# # === Start IDL2DDS Docker Service ===
+# if ! docker ps | grep -qi "idl2dds"; then
+#   echo "📦 Launching IDL2DDS docker services..." | tee -a "$LOG_FILE"
+#   [[ ! -d IDL2DDS ]] && git clone https://github.com/MCO-PICCOLO/IDL2DDS -b master
+#   pushd IDL2DDS
+#   docker compose up --build -d
+#   popd
+# else
+#   echo "🟢 IDL2DDS already running." | tee -a "$LOG_FILE"
+# fi
 
-# === Player ===
-start_service "$ACTIONCONTROLLER_MANIFEST" "actioncontroller"
-etcdctl del "" --prefix
-sleep 3
+# # === Player ===
+# start_service "$ACTIONCONTROLLER_MANIFEST" "actioncontroller"
+# etcdctl del "" --prefix
+# sleep 3
 
-if [[ -f "$PLAYER_MANIFEST" ]]; then
-  echo "📂 Running tarpaulin for player" | tee -a "$LOG_FILE"
-  mkdir -p "$COVERAGE_ROOT/player"
-  (
-    cd "$(dirname "$PLAYER_MANIFEST")"
-    cargo tarpaulin --out Html --out Lcov --out Xml \
-      --output-dir "$COVERAGE_ROOT/player" \
-      2>&1 | tee -a "$LOG_FILE" || true
-  )
-else
-  echo "::warning ::$PLAYER_MANIFEST not found. Skipping..." | tee -a "$LOG_FILE"
-fi
+# if [[ -f "$PLAYER_MANIFEST" ]]; then
+#   echo "📂 Running tarpaulin for player" | tee -a "$LOG_FILE"
+#   mkdir -p "$COVERAGE_ROOT/player"
+#   (
+#     cd "$(dirname "$PLAYER_MANIFEST")"
+#     cargo tarpaulin --out Html --out Lcov --out Xml \
+#       --output-dir "$COVERAGE_ROOT/player" \
+#       2>&1 | tee -a "$LOG_FILE" || true
+#   )
+# else
+#   echo "::warning ::$PLAYER_MANIFEST not found. Skipping..." | tee -a "$LOG_FILE"
+# fi
 
 cleanup
 

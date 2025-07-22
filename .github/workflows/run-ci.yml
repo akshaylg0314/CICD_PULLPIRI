@@ -126,7 +126,7 @@ jobs:
         id: test_coverage_html
         with:
           name: code-coverage-html
-          path: dist/coverage/sever/*.html
+          path: dist/coverage/server/*.html
 
       # # Step 17: Upload to Codecov
       # - name: Upload to Codecov
