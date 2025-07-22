@@ -98,7 +98,6 @@ if [[ -f "$SERVER_MANIFEST" ]]; then
       --output-dir "$PROJECT_ROOT/$COVERAGE_ROOT/server" \
       2>&1 | tee -a "$LOG_FILE" || true
   )
-#   mv "$COVERAGE_ROOT/server/tarpaulin-report.html" "$COVERAGE_ROOT/server/index.html" 2>/dev/null || true
 else
   echo "::warning ::$SERVER_MANIFEST not found. Skipping..." | tee -a "$LOG_FILE"
 fi
