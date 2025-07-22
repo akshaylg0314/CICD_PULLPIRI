@@ -46,25 +46,25 @@ jobs:
           mkdir -p dist/coverage/server
           mkdir -p dist/coverage/player
 
-      # # Step 7: Run project build and parse logs
-      # - name: Build and parse project
-      #   run: ./scripts/buildNparse.sh
+      # Step 7: Run project build and parse logs
+      - name: Build and parse project
+        run: ./scripts/buildNparse.sh
 
-      # # Step 8: Run all Rust unit/integration tests and generate reports
-      # - name: Run tests and generate report
-      #   run: ./scripts/testNparse.sh
+      # Step 8: Run all Rust unit/integration tests and generate reports
+      - name: Run tests and generate report
+        run: ./scripts/testNparse.sh
 
-      # # Step 9: Linting (clippy)
-      # - name: Run Clippy (lint)
-      #   run: ./scripts/clippy_check.sh
+      # Step 9: Linting (clippy)
+      - name: Run Clippy (lint)
+        run: ./scripts/clippy_check.sh
 
-      # # Step 10: Formatting check
-      # - name: Run format check
-      #   run: ./scripts/fmt_check.sh
+      # Step 10: Formatting check
+      - name: Run format check
+        run: ./scripts/fmt_check.sh
 
-      # # Step 11: License, ban, and security checks with cargo-deny
-      # - name: Run cargo-deny checks
-      #   run: ./scripts/deny_check.sh
+      # Step 11: License, ban, and security checks with cargo-deny
+      - name: Run cargo-deny checks
+        run: ./scripts/deny_check.sh
 
       # Step 12: Run test coverage script
       - name: Run test coverage script
@@ -107,7 +107,6 @@ jobs:
       - name: Upload coverage report (lcov)
         if: always()
         uses: actions/upload-artifact@v4
-        id: test_coverage_lcov
         with:
           name: code-coverage-lcov
           path: dist/coverage/server/lcov.info
@@ -115,7 +114,6 @@ jobs:
       - name: Upload coverage report (xml)
         if: always()
         uses: actions/upload-artifact@v4
-        id: test_coverage_xml
         with:
           name: code-coverage-xml
           path: dist/coverage/server/cobertura.xml
@@ -123,7 +121,6 @@ jobs:
       - name: Upload coverage report (html)
         if: always()
         uses: actions/upload-artifact@v4
-        id: test_coverage_html
         with:
           name: code-coverage-html
           path: dist/coverage/server/*.html
