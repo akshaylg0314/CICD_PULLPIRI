@@ -115,6 +115,7 @@ fi
 
 # === ACTIONCONTROLLER and FILTERGATEWAY ===
 start_service "$ACTIONCONTROLLER_MANIFEST" "actioncontroller"
+etcdctl del "" --prefix
 sleep 3
 
 if [[ -f "$FILTERGATEWAY_MANIFEST" ]]; then
