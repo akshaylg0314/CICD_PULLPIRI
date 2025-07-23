@@ -123,7 +123,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: code-coverage-html
-          path: dist/coverage/server/*.html
+          path: dist/coverage/server/tarpaulin-report.html
 
       # # Step 17: Upload to Codecov
       # - name: Upload to Codecov
