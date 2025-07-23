@@ -68,11 +68,35 @@ jobs:
           name: license-report
           path: dist/licenses/
       
-      - name: Download coverage report
+      - name: Download coverage report for server
         uses: actions/download-artifact@v4
         with:
-          name: code-coverage-html
-          path: dist/coverage/server/tarpaulin-report.html
+          name: code-coverage-html-server
+          path: dist/coverage/server/
+
+      - name: Download coverage report for tools
+        uses: actions/download-artifact@v4
+        with:
+          name: code-coverage-html-tools
+          path: dist/coverage/tools/
+
+      - name: Download coverage report for common
+        uses: actions/download-artifact@v4
+        with:
+          name: code-coverage-html-common
+          path: dist/coverage/common/
+
+      - name: Download coverage report for agent
+        uses: actions/download-artifact@v4
+        with:
+          name: code-coverage-html-agent
+          path: dist/coverage/agent/
+
+      - name: Download coverage report for player
+        uses: actions/download-artifact@v4
+        with:
+          name: code-coverage-html-player
+          path: dist/coverage/player/
 
       - name: Upload deny report to release
         uses: svenstaro/upload-release-action@v2
@@ -108,19 +132,50 @@ jobs:
           file_glob: true
           tag: ${{ github.ref }}
       
-      - name: Upload test coverage report to release
+      - name: Upload test coverage report for server to release
         uses: svenstaro/upload-release-action@v2
-        id: upload_test_coverage_report
+        id: upload_test_coverage_report_server
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: dist/coverage/server/tarpaulin-report.html
+          file: dist/coverage/server/*.html
+          file_glob: true
           tag: ${{ github.ref }}
 
-      - name: Gets latest created release info
-        id: latest_release_info
-        uses: joutvhu/get-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload test coverage report for player to release
+        uses: svenstaro/upload-release-action@v2
+        id: upload_test_coverage_report_player
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: dist/coverage/player/*.html
+          file_glob: true
+          tag: ${{ github.ref }}
+
+      - name: Upload test coverage report for agent to release
+        uses: svenstaro/upload-release-action@v2
+        id: upload_test_coverage_report_agent
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: dist/coverage/agent/*.html
+          file_glob: true
+          tag: ${{ github.ref }}
+
+      - name: Upload test coverage report for tools to release
+        uses: svenstaro/upload-release-action@v2
+        id: upload_test_coverage_report_tools
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: dist/coverage/tools/*.html
+          file_glob: true
+          tag: ${{ github.ref }}
+
+      - name: Upload test coverage report for common to release
+        uses: svenstaro/upload-release-action@v2
+        id: upload_test_coverage_report_common
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: dist/coverage/tools/*.html
+          file_glob: true
+          tag: ${{ github.ref }}
 
       - name: Upload README to release
         uses: svenstaro/upload-release-action@v2
@@ -159,6 +214,12 @@ jobs:
           file: doc-archive.tar.gz
           tag: ${{ github.ref }}
 
+      - name: Gets latest created release info
+        id: latest_release_info
+        uses: joutvhu/get-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Collect quality artifacts with quevee
         id: quevee_manifest
         uses: eclipse-dash/quevee@v1
@@ -169,8 +230,8 @@ jobs:
           artifacts_release_process: ${{ steps.upload_release_process.outputs.browser_download_url }}
           artifacts_documentation: ${{ steps.upload_doc.outputs.browser_download_url }}
           artifacts_requirements: ${{ steps.upload_doc.outputs.browser_download_url }}
-          artifacts_testing: ${{ steps.upload_test_report.outputs.browser_download_url }}, ${{ steps.upload_license_report.outputs.browser_download_url }}, ${{ steps.upload_fmt_report.outputs.browser_download_url }}, ${{ steps.upload_deny_report.outputs.browser_download_url }}, ${{ steps.upload_test_coverage_report.outputs.browser_download_url }}
-
+          artifacts_testing: ${{ steps.upload_test_report.outputs.browser_download_url }}, ${{ steps.upload_license_report.outputs.browser_download_url }}, ${{ steps.upload_fmt_report.outputs.browser_download_url }}, ${{ steps.upload_deny_report.outputs.browser_download_url }}, ${{ steps.upload_test_coverage_report_server.outputs.browser_download_url }},  ${{ steps.upload_test_coverage_report_tools.outputs.browser_download_url }}, ${{ steps.upload_test_coverage_report_player.outputs.browser_download_url }}, ${{ steps.upload_test_coverage_report_agent.outputs.browser_download_url }}, ${{ steps.upload_test_coverage_report_common.outputs.browser_download_url }}
+      
       - name: Upload quality manifest to release
         uses: svenstaro/upload-release-action@v2
         with:
