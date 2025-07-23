@@ -61,12 +61,27 @@ if [[ -f "$COMMON_MANIFEST" ]]; then
   (
     cd "$(dirname "$COMMON_MANIFEST")"
     cargo tarpaulin --out Html --out Lcov --out Xml \
-      --output-dir "$COVERAGE_ROOT/common" \
+      --output-dir "$PROJECT_ROOT/$COVERAGE_ROOT/common" \
       2>&1 | tee -a "$LOG_FILE" || true
   )
-#   mv "$COVERAGE_ROOT/common/tarpaulin-report.html" "$COVERAGE_ROOT/common/index.html" 2>/dev/null || true
+  mv "$PROJECT_ROOT/$COVERAGE_ROOT/common/tarpaulin-report.html" "$PROJECT_ROOT/$COVERAGE_ROOT/common/tarpaulin-report-common.html" 2>/dev/null || true
 else
   echo "::warning ::$COMMON_MANIFEST not found. Skipping..." | tee -a "$LOG_FILE"
+fi
+
+# === Agent ===
+if [[ -f "$AGENT_MANIFEST" ]]; then
+  echo "📂 Running tarpaulin for agent" | tee -a "$LOG_FILE"
+  mkdir -p "$COVERAGE_ROOT/agent"
+  (
+    cd "$(dirname "$AGENT_MANIFEST")"
+    cargo tarpaulin --out Html --out Lcov --out Xml \
+      --output-dir "$PROJECT_ROOT/$COVERAGE_ROOT/agent" \
+      2>&1 | tee -a "$LOG_FILE" || true
+  )
+  mv "$PROJECT_ROOT/$COVERAGE_ROOT/agent/tarpaulin-report.html" "$PROJECT_ROOT/$COVERAGE_ROOT/agent/tarpaulin-report-agent.html" 2>/dev/null || true
+else
+  echo "::warning ::$AGENT_MANIFEST not found. Skipping..." | tee -a "$LOG_FILE"
 fi
 
 # === TOOLS ===
@@ -79,6 +94,7 @@ if [[ -f "$TOOLS_MANIFEST" ]]; then
       --output-dir "$PROJECT_ROOT/$COVERAGE_ROOT/tools" \
       2>&1 | tee -a "$LOG_FILE" || true
   )
+  mv "$PROJECT_ROOT/$COVERAGE_ROOT/tools/tarpaulin-report.html" "$PROJECT_ROOT/$COVERAGE_ROOT/tools/tarpaulin-report-tools.html" 2>/dev/null || true
 else
   echo "::warning ::$TOOLS_MANIFEST not found. Skipping..." | tee -a "$LOG_FILE"
 fi
@@ -98,6 +114,7 @@ if [[ -f "$SERVER_MANIFEST" ]]; then
       --output-dir "$PROJECT_ROOT/$COVERAGE_ROOT/server" \
       2>&1 | tee -a "$LOG_FILE" || true
   )
+  mv "$PROJECT_ROOT/$COVERAGE_ROOT/server/tarpaulin-report.html" "$PROJECT_ROOT/$COVERAGE_ROOT/server/tarpaulin-report-server.html" 2>/dev/null || true
 else
   echo "::warning ::$SERVER_MANIFEST not found. Skipping..." | tee -a "$LOG_FILE"
 fi
@@ -127,9 +144,10 @@ if [[ -f "$PLAYER_MANIFEST" ]]; then
   (
     cd "$(dirname "$PLAYER_MANIFEST")"
     cargo tarpaulin --out Html --out Lcov --out Xml \
-      --output-dir "$COVERAGE_ROOT/player" \
+      --output-dir "$PROJECT_ROOT/$COVERAGE_ROOT/player" \
       2>&1 | tee -a "$LOG_FILE" || true
   )
+  mv "$PROJECT_ROOT/$COVERAGE_ROOT/player/tarpaulin-report.html" "$PROJECT_ROOT/$COVERAGE_ROOT/player/tarpaulin-report-player.html" 2>/dev/null || true
 else
   echo "::warning ::$PLAYER_MANIFEST not found. Skipping..." | tee -a "$LOG_FILE"
 fi
