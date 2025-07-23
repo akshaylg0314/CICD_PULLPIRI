@@ -190,6 +190,27 @@ jobs:
           name: code-coverage-html-player
           path: dist/coverage/player/tarpaulin-report-player.html
 
+      - name: Upload coverage report for common (lcov)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-coverage-lcov-common
+          path: dist/coverage/common/lcov.info
+
+      - name: Upload coverage report for common (xml)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-coverage-xml-common
+          path: dist/coverage/common/cobertura.xml
+    
+      - name: Upload coverage report for common (html)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-coverage-html-common
+          path: dist/coverage/common/tarpaulin-report-common.html
+
       # # Step 17: Upload to Codecov
       # - name: Upload to Codecov
       #   if: env.CODECOV_TOKEN != ''
