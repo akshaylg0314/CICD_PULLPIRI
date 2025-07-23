@@ -72,7 +72,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: code-coverage-html
-          path: dist/coverage/server/
+          path: dist/coverage/server/tarpaulin-report.html
 
       - name: Upload deny report to release
         uses: svenstaro/upload-release-action@v2
@@ -113,8 +113,7 @@ jobs:
         id: upload_test_coverage_report
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: dist/coverage/server/*.html
-          file_glob: true
+          file: dist/coverage/server/tarpaulin-report.html
           tag: ${{ github.ref }}
 
       - name: Gets latest created release info
