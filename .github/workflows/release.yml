@@ -72,7 +72,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: code-coverage-html
-          path: dist/coverage/server/*.html
+          path: dist/coverage/server/
 
       - name: Upload deny report to release
         uses: svenstaro/upload-release-action@v2
