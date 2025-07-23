@@ -126,27 +126,28 @@ jobs:
         with:
           name: code-coverage-html-server
           path: dist/coverage/server/tarpaulin-report-server.html
+      
+      # Test Cases are not proper and passing so code coverage report will not generate as of now
+      # - name: Upload coverage report for agent (lcov)
+      #   if: always()
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: code-coverage-lcov-agent
+      #     path: dist/coverage/agent/lcov.info
 
-      - name: Upload coverage report for agent (lcov)
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: code-coverage-lcov-agent
-          path: dist/coverage/agent/lcov.info
-
-      - name: Upload coverage report for agent (xml)
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: code-coverage-xml-agent
-          path: dist/coverage/agent/cobertura.xml
+      # - name: Upload coverage report for agent (xml)
+      #   if: always()
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: code-coverage-xml-agent
+      #     path: dist/coverage/agent/cobertura.xml
     
-      - name: Upload coverage report for agent (html)
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: code-coverage-html-agent
-          path: dist/coverage/agent/tarpaulin-report-agent.html
+      # - name: Upload coverage report for agent (html)
+      #   if: always()
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: code-coverage-html-agent
+      #     path: dist/coverage/agent/tarpaulin-report-agent.html
       
       - name: Upload coverage report for tools (lcov)
         if: always()

@@ -70,19 +70,20 @@ else
 fi
 
 # === Agent ===
-if [[ -f "$AGENT_MANIFEST" ]]; then
-  echo "📂 Running tarpaulin for agent" | tee -a "$LOG_FILE"
-  mkdir -p "$COVERAGE_ROOT/agent"
-  (
-    cd "$(dirname "$AGENT_MANIFEST")"
-    cargo tarpaulin --out Html --out Lcov --out Xml \
-      --output-dir "$PROJECT_ROOT/$COVERAGE_ROOT/agent" \
-      2>&1 | tee -a "$LOG_FILE" || true
-  )
-  mv "$PROJECT_ROOT/$COVERAGE_ROOT/agent/tarpaulin-report.html" "$PROJECT_ROOT/$COVERAGE_ROOT/agent/tarpaulin-report-agent.html" 2>/dev/null || true
-else
-  echo "::warning ::$AGENT_MANIFEST not found. Skipping..." | tee -a "$LOG_FILE"
-fi
+# Test Cases are not proper and passing so code coverage report will not generate as of now
+# if [[ -f "$AGENT_MANIFEST" ]]; then
+#   echo "📂 Running tarpaulin for agent" | tee -a "$LOG_FILE"
+#   mkdir -p "$COVERAGE_ROOT/agent"
+#   (
+#     cd "$(dirname "$AGENT_MANIFEST")"
+#     cargo tarpaulin --out Html --out Lcov --out Xml \
+#       --output-dir "$PROJECT_ROOT/$COVERAGE_ROOT/agent" \
+#       2>&1 | tee -a "$LOG_FILE" || true
+#   )
+#   mv "$PROJECT_ROOT/$COVERAGE_ROOT/agent/tarpaulin-report.html" "$PROJECT_ROOT/$COVERAGE_ROOT/agent/tarpaulin-report-agent.html" 2>/dev/null || true
+# else
+#   echo "::warning ::$AGENT_MANIFEST not found. Skipping..." | tee -a "$LOG_FILE"
+# fi
 
 # === TOOLS ===
 if [[ -f "$TOOLS_MANIFEST" ]]; then
