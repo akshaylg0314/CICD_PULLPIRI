@@ -156,4 +156,4 @@ fi
 cleanup
 
 # === Summary ===
-echo "✅ All test coverage reports generated at: $COVERAGE_ROOT" | tee -a "$LOG_FILE"
+echo "All test coverage reports generated at: $COVERAGE_ROOT" | tee -a "$LOG_FILE"
