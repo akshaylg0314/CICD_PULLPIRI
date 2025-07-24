@@ -7,12 +7,11 @@ SPDX-License-Identifier: Apache-2.0
 <div align="center">
     <img alt="Shows Pullpiri logo" src="doc/images/Pullpiri.svg"
         width="50%"
-        height="50%"
     />
 </div>
 <br>
 
-# PULLPIRI a
+# PULLPIRI
 
 The main goal of PULLPIRI project is to develop an efficient vehicle service
 orchestrator framework to realize the potential benefits of cloud native
