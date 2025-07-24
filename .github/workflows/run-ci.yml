@@ -127,6 +127,48 @@ jobs:
           name: code-coverage-html-server
           path: dist/coverage/server/tarpaulin-report-server.html
       
+      - name: Upload coverage report for tools (lcov)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-coverage-lcov-tools
+          path: dist/coverage/tools/lcov.info
+
+      - name: Upload coverage report for tools (xml)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-coverage-xml-tools
+          path: dist/coverage/tools/cobertura.xml
+    
+      - name: Upload coverage report for tools (html)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-coverage-html-tools
+          path: dist/coverage/tools/tarpaulin-report-tools.html
+
+      - name: Upload coverage report for common (lcov)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-coverage-lcov-common
+          path: dist/coverage/common/lcov.info
+
+      - name: Upload coverage report for common (xml)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-coverage-xml-common
+          path: dist/coverage/common/cobertura.xml
+    
+      - name: Upload coverage report for common (html)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-coverage-html-common
+          path: dist/coverage/common/tarpaulin-report-common.html
+      
       # Test Cases are not proper and passing so code coverage report will not generate as of now
       # - name: Upload coverage report for agent (lcov)
       #   if: always()
@@ -149,27 +191,6 @@ jobs:
       #     name: code-coverage-html-agent
       #     path: dist/coverage/agent/tarpaulin-report-agent.html
       
-      - name: Upload coverage report for tools (lcov)
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: code-coverage-lcov-tools
-          path: dist/coverage/tools/lcov.info
-
-      - name: Upload coverage report for tools (xml)
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: code-coverage-xml-tools
-          path: dist/coverage/tools/cobertura.xml
-    
-      - name: Upload coverage report for tools (html)
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: code-coverage-html-tools
-          path: dist/coverage/tools/tarpaulin-report-tools.html
-
       # - name: Upload coverage report for player (lcov)
       #   if: always()
       #   uses: actions/upload-artifact@v4
@@ -190,28 +211,7 @@ jobs:
       #   with:
       #     name: code-coverage-html-player
       #     path: dist/coverage/player/tarpaulin-report-player.html
-
-      - name: Upload coverage report for common (lcov)
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: code-coverage-lcov-common
-          path: dist/coverage/common/lcov.info
-
-      - name: Upload coverage report for common (xml)
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: code-coverage-xml-common
-          path: dist/coverage/common/cobertura.xml
     
-      - name: Upload coverage report for common (html)
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: code-coverage-html-common
-          path: dist/coverage/common/tarpaulin-report-common.html
-
       # # Step 17: Upload to Codecov
       # - name: Upload to Codecov
       #   if: env.CODECOV_TOKEN != ''
