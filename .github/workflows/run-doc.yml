@@ -11,13 +11,13 @@ jobs:
       image: rust:latest
     steps:
       - uses: actions/checkout@v4
-      # - name: Install markdownlint
-      #   run: npm install -g markdownlint-cli
-      # - name: Run markdownlint
-      #   run: |
-      #     markdownlint '**/*.md' > docs_report.md || true
-      # - name: Upload docs report
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: docs-report
-      #     path: dist/reports/docs_report.md
+      - name: Install markdownlint
+        run: npm install -g markdownlint-cli
+      - name: Run markdownlint
+        run: |
+          markdownlint '**/*.md' > docs_report.md || true
+      - name: Upload docs report
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs-report
+          path: dist/reports/docs_report.md
