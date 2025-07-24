@@ -50,5 +50,5 @@ spec:
   hostNetwork: true
   containers:
     - name: antipinch
-      image: sdv.lge.com/demo/antipinch-core:1
+      image: sdv.lge.com/demo/antipinch-core:1.0
   terminationGracePeriodSeconds: 0

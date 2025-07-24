@@ -207,6 +207,44 @@ mod tests {
         assert!(result.is_ok());
     }
 
+    /// Test workload_run() with dummy data (positive)
+    #[tokio::test]
+    async fn test_workload_run_start_unit() {
+        let conn = dummy_connection();
+
+        if !is_bluechi_service_available(&conn) {
+            println!("Skipping test_workload_run_start_unit — BlueChi service unavailable.");
+            return;
+        }
+
+        let node = "HPC";
+        let unit_name = "antipinch-enable.service";
+
+        let bluechi_proxy = conn.with_proxy(DEST, PATH, Duration::from_millis(5000));
+
+        let result = workload_run(&conn, "StartUnit", node, &bluechi_proxy, unit_name);
+        assert!(result.is_ok());
+
+        let output = result.unwrap();
+        assert!(output.contains("StartUnit"));
+        assert!(output.contains(unit_name));
+    }
+
+    /// Test reload_all_nodes() (positive)
+    #[tokio::test]
+    async fn test_reload_all_nodes() {
+        let conn = dummy_connection();
+
+        if !is_bluechi_service_available(&conn) {
+            println!("Skipping test_reload_all_nodes — BlueChi service unavailable.");
+            return;
+        }
+
+        let proxy = conn.with_proxy(DEST, PATH, Duration::from_millis(5000));
+        let result = reload_all_nodes(&proxy);
+        assert!(result.is_ok());
+    }
+
     /// Test Command::to_method_name() for all command variants (sync test)
     #[tokio::test]
     async fn test_command_to_method_name() {
