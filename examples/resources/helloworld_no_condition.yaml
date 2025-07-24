@@ -3,13 +3,7 @@ kind: Scenario
 metadata:
   name: helloworld
 spec:
-  condition:
-   express: eq
-   value: "true"
-   operands:
-     type: DDS
-     name: value
-     value: ADASObstacleDetectionIsWarning
+  condition: null
   action: update
   target: helloworld
 ---

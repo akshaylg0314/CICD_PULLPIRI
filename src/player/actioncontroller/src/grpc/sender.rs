@@ -116,6 +116,19 @@ mod tests {
     use super::*;
 
     #[tokio::test]
+    async fn test_check_policy_success() {
+        let scenario_name = "antipinch-enable".to_string();
+
+        let result = check_policy(scenario_name).await;
+        if let Err(ref e) = result {
+            println!("Error in test_check_policy_success: {:?}", e);
+        } else {
+            println!("test_check_policy_success successful");
+        }
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
     async fn test_check_policy_failure_invalid_scenario() {
         // Sending invalid scenario_name to simulate policy check failure
         let scenario_name = "".to_string(); // Empty string is invalid
@@ -124,20 +137,20 @@ mod tests {
         assert!(result.is_err());
     }
 
-    // #[tokio::test]
-    // async fn test_handle_workload_success() {
-    //     let workload_name = "test-workload".to_string();
-    //     let action = 1;
-    //     let description = "example description".to_string();
+    #[tokio::test]
+    async fn test_handle_workload_success() {
+        let workload_name = "test-workload".to_string();
+        let action = 1;
+        let description = "example description".to_string();
 
-    //     let result = handle_yaml(workload_name).await;
-    //     if let Err(ref e) = result {
-    //         println!("Error in test_handle_workload_success: {:?}", e);
-    //     } else {
-    //         println!("test_handle_workload_success successful");
-    //     }
-    //     assert!(result.is_ok());
-    // }
+        let result = handle_yaml(workload_name).await;
+        if let Err(ref e) = result {
+            println!("Error in test_handle_workload_success: {:?}", e);
+        } else {
+            println!("test_handle_workload_success successful");
+        }
+        assert!(result.is_ok());
+    }
 
     #[tokio::test]
     async fn test_handle_workload_failure_invalid_workload() {
