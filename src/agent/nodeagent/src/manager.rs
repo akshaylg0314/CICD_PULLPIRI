@@ -69,21 +69,51 @@ impl NodeAgentManager {
     async fn gather_container_info_loop(&self) {
         use crate::resource::container::inspect;
         use tokio::time::{sleep, Duration};
+
+        // This is the previous container list for comparison
+        let mut previous_container_list = Vec::new();
+
         loop {
             let container_list = inspect().await.unwrap_or_default();
             let node = self.hostname.clone();
 
             // Send the container info to the monitoring server
-            let mut sender = self.sender.lock().await;
-            if let Err(e) = sender
-                .send_container_list(ContainerList {
-                    node_name: node.clone(),
-                    containers: container_list,
-                })
-                .await
             {
-                eprintln!("[NodeAgent] Error sending container info: {}", e);
+                let mut sender = self.sender.lock().await;
+                if let Err(e) = sender
+                    .send_container_list(ContainerList {
+                        node_name: node.clone(),
+                        containers: container_list.clone(),
+                    })
+                    .await
+                {
+                    eprintln!("[NodeAgent] Error sending container info: {}", e);
+                }
             }
+
+            // Check if the container list is changed from the previous one
+            if previous_container_list != container_list {
+                println!(
+                    "Container list changed for node: {}. Previous: {:?}, Current: {:?}",
+                    node, previous_container_list, container_list
+                );
+
+                // Save the previous container list for comparison
+                previous_container_list = container_list.clone();
+
+                // Send the changed container list to the state manager
+                let mut sender = self.sender.lock().await;
+                if let Err(e) = sender
+                    .send_changed_container_list(ContainerList {
+                        node_name: node.clone(),
+                        containers: container_list,
+                    })
+                    .await
+                {
+                    eprintln!("[NodeAgent] Error sending changed container list: {}", e);
+                }
+            }
+
             sleep(Duration::from_secs(1)).await;
         }
     }
@@ -106,5 +136,109 @@ impl NodeAgentManager {
         let _ = tokio::try_join!(grpc_processor, container_gatherer);
         println!("NodeAgentManager stopped");
         Ok(())
+    }
+}
+
+//unit test cases
+#[cfg(test)]
+mod tests {
+    const VALID_ARTIFACT_YAML: &str = r#"
+apiVersion: v1
+kind: Scenario
+metadata:
+  name: helloworld
+spec:
+  condition:
+  action: update
+  target: helloworld
+---
+apiVersion: v1
+kind: Package
+metadata:
+  label: null
+  name: helloworld
+spec:
+  pattern:
+    - type: plain
+  models:
+    - name: helloworld-core
+      node: HPC
+      resources:
+        volume:
+        network:
+---
+apiVersion: v1
+kind: Model
+metadata:
+  name: helloworld-core
+  annotations:
+    io.piccolo.annotations.package-type: helloworld-core
+    io.piccolo.annotations.package-name: helloworld
+    io.piccolo.annotations.package-network: default
+  labels:
+    app: helloworld-core
+spec:
+  hostNetwork: true
+  containers:
+    - name: helloworld
+      image: helloworld
+  terminationGracePeriodSeconds: 0
+"#;
+    use crate::manager::NodeAgentManager;
+    use common::nodeagent::HandleYamlRequest;
+    use std::sync::Arc;
+    use tokio::sync::mpsc;
+    use tokio::sync::Mutex;
+
+    #[tokio::test]
+    async fn test_new_creates_instance_with_correct_hostname() {
+        let (_tx, rx) = mpsc::channel(1);
+        let hostname = "test-host".to_string();
+
+        let manager = NodeAgentManager::new(rx, hostname.clone()).await;
+
+        assert_eq!(manager.hostname, hostname);
+    }
+
+    #[tokio::test]
+    async fn test_initialize_returns_ok() {
+        let (_tx, rx) = mpsc::channel(1);
+        let hostname = "test-host".to_string();
+
+        let mut manager = NodeAgentManager::new(rx, hostname).await;
+        let result = manager.initialize().await;
+
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_process_grpc_requests_handles_empty_channel() {
+        let (_tx, rx) = mpsc::channel(1);
+        drop(_tx); // close sender so recv returns None immediately
+        let hostname = "test-host".to_string();
+
+        let manager = NodeAgentManager::new(rx, hostname).await;
+        let result = manager.process_grpc_requests().await;
+
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_process_grpc_requests_receives_and_parses_yaml() {
+        let (tx, rx) = mpsc::channel(1);
+        let hostname = "test-host".to_string();
+
+        let manager = NodeAgentManager::new(rx, hostname.clone()).await;
+
+        let yaml_string = VALID_ARTIFACT_YAML.to_string();
+        let request = HandleYamlRequest {
+            yaml: yaml_string.clone(),
+        };
+
+        tx.send(request).await.unwrap();
+        drop(tx);
+
+        let result = manager.process_grpc_requests().await;
+        assert!(result.is_ok());
     }
 }
