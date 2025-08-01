@@ -265,6 +265,8 @@ jobs:
             ${{ steps.upload_test_coverage_report_tools.outputs.browser_download_url }},
             ${{ steps.upload_test_coverage_report_server.outputs.browser_download_url }}
 
+
+
       # Upload the generated quality manifest to GitHub Release
       - name: Upload quality manifest to release
         uses: svenstaro/upload-release-action@v2
